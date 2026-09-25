@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>源泉所得税 計算ツール</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+  :root{
+    --bg:#fbf7ef;
+    --panel:#ffffff;
+    --ink:#3d4a3e;
+    --ink-soft:#6f7d6e;
+    --line:#e7e0d2;
+    --accent:#5aa897;     /* やわらかな青緑 */
+    --accent-deep:#3f8576;
+    --accent-soft:#e3f1ec;
+    --amber:#f0a868;      /* あたたかいオレンジ */
+    --amber-soft:#fbe7d4;
+    --sky:#8cc6e0;
+    --sky-soft:#e2f1f7;
+    --shadow:0 4px 18px rgba(90,168,151,.10);
+    --radius:16px;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    background:
+      radial-gradient(circle at 12% 8%, #fdeede 0, transparent 38%),
+      radial-gradient(circle at 88% 92%, #e3f1ec 0, transparent 40%),
+      var(--bg);
+    color:var(--ink);
+    min-height:100vh;
+    padding:28px 16px 60px;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{max-width:880px;margin:0 auto;}
+
+  header.title{
+    text-align:center;
+    margin-bottom:26px;
+  }
+  header.title h1{
+    font-family:'Zen Maru Gothic',sans-serif;
+    font-weight:700;
+    font-size:1.85rem;
+    margin:0 0 6px;
+    letter-spacing:.04em;
+    color:var(--accent-deep);
+  }
+  header.title .sub{
+    color:var(--ink-soft);
+    font-size:.92rem;
+    letter-spacing:.02em;
+  }
+  header.title .leaf{
+    display:inline-block;
+    width:42px;height:42px;
+    margin-bottom:6px;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:22px 22px 24px;
+    margin-bottom:22px;
+  }
+
+  .card h2{
+    font-family:'Zen Maru Gothic',sans-serif;
+    font-size:1.08rem;
+    margin:0 0 16px;
+    display:flex;align-items:center;gap:8px;
+    color:var(--accent-deep);
+  }
+  .card h2 .dot{
+    width:11px;height:11px;border-radius:50%;
+    background:var(--amber);
+    box-shadow:0 0 0 4px var(--amber-soft);
+  }
+  .card h2 .dot.blue{background:var(--sky);box-shadow:0 0 0 4px var(--sky-soft);}
+  .card h2 .dot.amber{background:var(--amber);box-shadow:0 0 0 4px var(--amber-soft);}
+  .card h2 .rate-tag{
+    margin-left:auto;
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    font-size:.78rem;font-weight:500;
+    color:var(--accent-deep);
+    background:var(--accent-soft);
+    padding:3px 10px;border-radius:20px;
+  }
+  .card h2 .rate-sel{
+    margin-left:auto;
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    font-size:.85rem;font-weight:500;
+    color:var(--accent-deep);
+    background:var(--accent-soft);
+    border:1.5px solid var(--accent);
+    padding:5px 10px;border-radius:20px;
+    cursor:pointer;
+  }
+  .card h2 .rate-sel:focus{outline:none;border-color:var(--accent-deep);}
+  .card h2 .rate-custom{
+    width:84px;
+    font-family:inherit;font-size:.85rem;
+    padding:5px 8px;text-align:right;
+    border:1.5px solid var(--accent);
+    border-radius:20px;background:#fff;
+    margin-left:8px;
+  }
+  .card h2 .rate-custom:focus{outline:none;border-color:var(--accent-deep);}
+  .sub-total{
+    margin-top:14px;
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    background:#fffdf9;
+    border:1px solid var(--line);
+    border-radius:11px;
+    padding:11px 15px;
+    font-size:.86rem;color:var(--ink-soft);
+  }
+  .sub-total span:first-child{
+    font-weight:500;color:var(--accent-deep);
+    font-family:'Zen Maru Gothic',sans-serif;
+  }
+  .sub-total b{
+    color:var(--ink);font-weight:700;
+    font-variant-numeric:tabular-nums;
+    font-size:.98rem;margin:0 1px;
+  }
+
+  /* 税率セレクタ */
+  .rate-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:10px;
+  }
+  .rate-opt{
+    position:relative;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:13px 14px;
+    cursor:pointer;
+    transition:.18s;
+    background:#fffdf9;
+  }
+  .rate-opt:hover{border-color:var(--accent);transform:translateY(-1px);}
+  .rate-opt input{position:absolute;opacity:0;}
+  .rate-opt .nm{font-weight:500;font-size:.92rem;display:block;margin-bottom:3px;}
+  .rate-opt .rt{font-size:.8rem;color:var(--ink-soft);}
+  .rate-opt.sel{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+    box-shadow:0 2px 10px rgba(90,168,151,.18);
+  }
+  .rate-opt.sel .nm{color:var(--accent-deep);}
+
+  .custom-rate{
+    margin-top:14px;
+    display:flex;align-items:center;gap:10px;
+    flex-wrap:wrap;
+    font-size:.9rem;color:var(--ink-soft);
+  }
+  .custom-rate input{
+    width:90px;
+    padding:7px 10px;
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    font-family:inherit;font-size:.95rem;
+    text-align:right;
+  }
+  .custom-rate input:focus{outline:none;border-color:var(--accent);}
+
+  /* 金額入力行 */
+  .rows{display:flex;flex-direction:column;gap:5px;}
+  .row{
+    display:grid;
+    grid-template-columns:1fr 1fr auto;
+    gap:10px;
+    align-items:center;
+    animation:fade .25s ease;
+  }
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .row .lbl-in,.row .amt-in{
+    padding:8px 12px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-family:inherit;font-size:1.05rem;
+    background:#fffdf9;
+    width:100%;
+    transition:.15s;
+  }
+  .row .amt-in{text-align:right;}
+  .row .lbl-in:focus,.row .amt-in:focus{outline:none;border-color:var(--accent);background:#fff;}
+
+  .row .tax-out{
+    text-align:right;
+    font-variant-numeric:tabular-nums;
+    padding-right:4px;
+  }
+  .row .tax-out .line{
+    display:flex;
+    align-items:baseline;
+    justify-content:flex-end;
+    gap:3px;
+    line-height:1.3;
+    white-space:nowrap;
+  }
+  .row .tax-out .g{
+    color:var(--accent-deep);font-weight:700;font-size:1.25rem;
+  }
+  .row .tax-out .t{
+    color:var(--amber);font-weight:700;font-size:1.25rem;
+  }
+  .row .tax-out small{
+    color:var(--ink-soft);font-weight:400;font-size:.74rem;
+  }
+
+  .del{
+    border:none;background:none;cursor:pointer;
+    width:32px;height:32px;border-radius:50%;
+    color:var(--ink-soft);font-size:1.1rem;line-height:1;
+    transition:.15s;
+  }
+  .del:hover{background:var(--amber-soft);color:#c9743a;}
+
+  .row-head{
+    display:grid;
+    grid-template-columns:1fr 1fr auto;
+    gap:10px;
+    font-size:.78rem;color:var(--ink-soft);
+    padding:0 4px 4px;
+    letter-spacing:.03em;
+  }
+  .row-head span:nth-child(1),.row-head span:nth-child(2){text-align:right;}
+  .row-head span:nth-child(3){width:32px;}
+
+  .add-btn{
+    margin-top:14px;
+    border:1.5px dashed var(--accent);
+    background:var(--accent-soft);
+    color:var(--accent-deep);
+    padding:11px;
+    width:100%;
+    border-radius:11px;
+    cursor:pointer;
+    font-family:inherit;font-size:.95rem;font-weight:500;
+    transition:.15s;
+  }
+  .add-btn:hover{background:#d5ebe3;}
+
+  /* 合計 */
+  .totals{
+    background:linear-gradient(135deg,#f4faf8 0%, #fdf3e7 100%);
+    border:1px solid var(--line);
+  }
+  .sticky-total{
+    position:sticky;
+    top:12px;
+    z-index:10;
+    backdrop-filter:blur(2px);
+  }
+  .total-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:14px;
+  }
+  .tbox{
+    background:#fff;
+    border-radius:12px;
+    padding:16px 14px;
+    text-align:center;
+    border:1px solid var(--line);
+  }
+  .tbox .cap{font-size:.8rem;color:var(--ink-soft);margin-bottom:7px;}
+  .tbox .val{
+    font-family:'Zen Maru Gothic',sans-serif;
+    font-size:1.4rem;font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .tbox .val .yen{font-size:.85rem;font-weight:400;margin-left:2px;color:var(--ink-soft);}
+  .tbox.gross .val{color:var(--sky);}
+  .tbox.tax .val{color:var(--amber);}
+  .tbox.net .val{color:var(--accent-deep);}
+
+  .note{
+    font-size:.78rem;color:var(--ink-soft);
+    line-height:1.7;margin-top:16px;
+    background:#fffdf9;border:1px solid var(--line);
+    border-radius:11px;padding:13px 15px;
+  }
+  .note b{color:var(--accent-deep);}
+
+  .calc-line{
+    font-size:.8rem;color:var(--ink-soft);
+    text-align:center;margin-top:12px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  @media(max-width:560px){
+    .total-grid{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="title">
+    <svg class="leaf" viewBox="0 0 48 48" fill="none">
+      <path d="M24 6c9 4 14 11 14 20 0 8-6 15-14 16-8-1-14-8-14-16 0-9 5-16 14-20z" fill="#e3f1ec" stroke="#5aa897" stroke-width="1.6"/>
+      <path d="M24 12v26M24 20l6-5M24 26l-6-5M24 31l6-5" stroke="#5aa897" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <h1>源泉所得税 計算ツール</h1>
+    <div class="sub">入金額（税引後）から税引前の金額と源泉所得税を逆算します（法人向け）</div>
+  </header>
+
+  <!-- 全体の合計（上部・追従表示） -->
+  <div class="card totals sticky-total">
+    <h2><span class="dot"></span>全体の合計</h2>
+    <div class="total-grid">
+      <div class="tbox gross">
+        <div class="cap">税引前金額 合計</div>
+        <div class="val" id="totGross">0<span class="yen">円</span></div>
+      </div>
+      <div class="tbox tax">
+        <div class="cap">源泉所得税 合計</div>
+        <div class="val" id="totTax">0<span class="yen">円</span></div>
+      </div>
+      <div class="tbox net">
+        <div class="cap">入金額（税引後）合計</div>
+        <div class="val" id="totNet">0<span class="yen">円</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 区分ごとの入力 -->
+  <div class="card sec" data-key="interest" data-rate="15.315">
+    <h2><span class="dot"></span>利息
+      <select class="rate-sel">
+        <option value="15.315" selected>15.315%</option>
+        <option value="20.42">20.42%</option>
+        <option value="custom">任意…</option>
+      </select>
+      <input class="rate-custom" type="number" step="0.001" min="0" max="100" value="15.315" style="display:none;">
+    </h2>
+    <div class="row-head">
+      <span>入金額（税引後）</span>
+      <span>税引前 / 源泉税</span>
+      <span></span>
+    </div>
+    <div class="rows"></div>
+    <button class="add-btn">＋ 金額の行を追加</button>
+    <div class="sub-total">
+      <span>小計</span>
+      <span>税引前 <b class="st-gross">0</b> 円</span>
+      <span>源泉税 <b class="st-tax">0</b> 円</span>
+      <span>入金 <b class="st-net">0</b> 円</span>
+    </div>
+  </div>
+
+  <div class="card sec" data-key="listed" data-rate="15.315">
+    <h2><span class="dot blue"></span>上場株式の配当
+      <select class="rate-sel">
+        <option value="15.315" selected>15.315%</option>
+        <option value="20.42">20.42%</option>
+        <option value="custom">任意…</option>
+      </select>
+      <input class="rate-custom" type="number" step="0.001" min="0" max="100" value="15.315" style="display:none;">
+    </h2>
+    <div class="row-head">
+      <span>入金額（税引後）</span>
+      <span>税引前 / 源泉税</span>
+      <span></span>
+    </div>
+    <div class="rows"></div>
+    <button class="add-btn">＋ 金額の行を追加</button>
+    <div class="sub-total">
+      <span>小計</span>
+      <span>税引前 <b class="st-gross">0</b> 円</span>
+      <span>源泉税 <b class="st-tax">0</b> 円</span>
+      <span>入金 <b class="st-net">0</b> 円</span>
+    </div>
+  </div>
+
+  <div class="card sec" data-key="unlisted" data-rate="20.42">
+    <h2><span class="dot amber"></span>非上場株式の配当
+      <select class="rate-sel">
+        <option value="15.315">15.315%</option>
+        <option value="20.42" selected>20.42%</option>
+        <option value="custom">任意…</option>
+      </select>
+      <input class="rate-custom" type="number" step="0.001" min="0" max="100" value="20.42" style="display:none;">
+    </h2>
+    <div class="row-head">
+      <span>入金額（税引後）</span>
+      <span>税引前 / 源泉税</span>
+      <span></span>
+    </div>
+    <div class="rows"></div>
+    <button class="add-btn">＋ 金額の行を追加</button>
+    <div class="sub-total">
+      <span>小計</span>
+      <span>税引前 <b class="st-gross">0</b> 円</span>
+      <span>源泉税 <b class="st-tax">0</b> 円</span>
+      <span>入金 <b class="st-net">0</b> 円</span>
+    </div>
+  </div>
+
+  <!-- 合計 -->
+  <!-- 注記 -->
+  <div class="card">
+    <div class="note">
+      <b>計算方法</b>：入金額（税引後）から税引前の支払額を逆算しています。源泉所得税は <b>税引前金額 × 税率（1円未満切り捨て）</b> で計算されるため、逆算では「税引前 − 源泉税 ＝ 入金額」が成り立つ整数を求めています（各行ごとに計算）。<br>
+      法人が受け取る場合、利息と上場株式の配当は <b>15.315%</b>（所得税15%＋復興税0.315%）、非上場株式の配当は <b>20.42%</b>（所得税20%＋復興税0.42%）が一般的です（いずれも住民税はかかりません）。実際の取扱いは個別事情で異なる場合があるため、最終的な判断は税理士・所轄税務署にご確認ください。
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const yen = n => Math.floor(n).toLocaleString('ja-JP');
+  const sections = document.querySelectorAll('.sec');
+
+  // 入金額(税引後) net から、税引前 gross を逆算する
+  // 関係式: gross - floor(gross * rate/100) = net （源泉税は1円未満切り捨て）
+  // 切り捨ての性質上、条件を満たす gross が複数あり得るため、最大の gross を採用する
+  function reverseCalc(net, rate){
+    if(net <= 0 || rate <= 0) return {gross: net, tax: 0};
+    const approx = Math.round(net / (1 - rate/100));
+    let best = null;
+    for(let g = approx + 3; g >= approx - 3; g--){
+      if(g < net) continue;
+      const tax = Math.floor(g * rate / 100);
+      if(g - tax === net){ best = {gross: g, tax}; break; }
+    }
+    if(best) return best;
+    // 厳密解が無い場合は近似値を採用
+    const tax = Math.floor(approx * rate / 100);
+    return {gross: approx, tax};
+  }
+
+  function getRate(sec){
+    const sel = sec.querySelector('.rate-sel').value;
+    if(sel === 'custom'){
+      return parseFloat(sec.querySelector('.rate-custom').value) || 0;
+    }
+    return parseFloat(sel);
+  }
+
+  function addRow(sec, amount=''){
+    const rowsEl = sec.querySelector('.rows');
+    const div = document.createElement('div');
+    div.className = 'row';
+    div.innerHTML = `
+      <input class="amt-in" type="number" placeholder="0" min="0" value="${amount}">
+      <div class="tax-out">
+        <div class="line"><span class="g">0</span><small>円（税引前）</small></div>
+        <div class="line"><span class="t">0</span><small>円（源泉税）</small></div>
+      </div>
+      <button class="del" title="削除" tabindex="-1">×</button>
+    `;
+    div.querySelector('.amt-in').addEventListener('input', recalc);
+    div.querySelector('.amt-in').addEventListener('keydown', e=>{
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        const inputs = [...sec.querySelectorAll('.amt-in')];
+        const idx = inputs.indexOf(e.target);
+        if(idx < inputs.length - 1){
+          inputs[idx + 1].focus();
+        } else {
+          // 最終行なら新しい行を追加してそこへ移動
+          addRow(sec);
+          const newInputs = sec.querySelectorAll('.amt-in');
+          newInputs[newInputs.length - 1].focus();
+        }
+      }
+    });
+    div.querySelector('.del').addEventListener('click', ()=>{
+      div.remove();
+      if(rowsEl.children.length === 0) addRow(sec);
+      recalc();
+    });
+    rowsEl.appendChild(div);
+  }
+
+  function recalc(){
+    let grandGross = 0, grandTax = 0, grandNet = 0;
+    sections.forEach(sec=>{
+      const rate = getRate(sec);
+      let gross = 0, tax = 0, net = 0;
+      sec.querySelectorAll('.row').forEach(row=>{
+        const inAmt = parseFloat(row.querySelector('.amt-in').value) || 0;
+        const r = reverseCalc(inAmt, rate);
+        row.querySelector('.tax-out .g').textContent = r.gross.toLocaleString('ja-JP');
+        row.querySelector('.tax-out .t').textContent = r.tax.toLocaleString('ja-JP');
+        gross += r.gross;
+        tax += r.tax;
+        net += inAmt;
+      });
+      sec.querySelector('.st-gross').textContent = gross.toLocaleString('ja-JP');
+      sec.querySelector('.st-tax').textContent   = tax.toLocaleString('ja-JP');
+      sec.querySelector('.st-net').textContent   = net.toLocaleString('ja-JP');
+      grandGross += gross;
+      grandTax += tax;
+      grandNet += net;
+    });
+    document.getElementById('totGross').innerHTML = `${yen(grandGross)}<span class="yen">円</span>`;
+    document.getElementById('totTax').innerHTML   = `${yen(grandTax)}<span class="yen">円</span>`;
+    document.getElementById('totNet').innerHTML   = `${yen(grandNet)}<span class="yen">円</span>`;
+  }
+
+  sections.forEach(sec=>{
+    sec.querySelector('.add-btn').addEventListener('click', ()=> addRow(sec));
+    // 税率セレクタ
+    const sel = sec.querySelector('.rate-sel');
+    const custom = sec.querySelector('.rate-custom');
+    sel.addEventListener('change', ()=>{
+      custom.style.display = (sel.value === 'custom') ? 'inline-block' : 'none';
+      if(sel.value === 'custom') custom.focus();
+      recalc();
+    });
+    custom.addEventListener('input', recalc);
+    // 初期行：利息は10行、それ以外は1行
+    const initRows = (sec.dataset.key === 'interest') ? 10 : 1;
+    for(let i = 0; i < initRows; i++) addRow(sec);
+  });
+  recalc();
+</script>
+</body>
+</html>

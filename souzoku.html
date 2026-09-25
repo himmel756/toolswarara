@@ -1,0 +1,1783 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>相続シミュレーション（たたき台）</title>
+<style>
+  :root{
+    --bg:#f7f9f6; --ink:#33403a; --ink-soft:#6d7b72; --line:#e2e8e1; --card:#ffffff;
+    --accent:#3a9d78; --accent-d:#2f8365; --accent-l:#eaf6f0;
+    --amber:#e9a23b; --amber-l:#fdf3e2; --blue:#4a90c2; --blue-l:#e9f2f8; --rose:#d97676; --rose-l:#fbeeee;
+    --shadow:0 1px 3px rgba(40,60,50,.06),0 6px 18px rgba(40,60,50,.05); --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",system-ui,sans-serif;font-size:15px;line-height:1.6}
+  .wrap{max-width:1240px;margin:0 auto;padding:22px 18px 90px}
+  header.top{background:linear-gradient(120deg,#f4faf6,#eef6f9);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px 24px;box-shadow:var(--shadow);margin-bottom:16px}
+  header.top h1{margin:0 0 4px;font-size:22px;letter-spacing:.02em}
+  header.top p{margin:0;color:var(--ink-soft);font-size:13.5px}
+  .badge{display:inline-block;background:var(--accent-l);color:var(--accent-d);font-size:12px;font-weight:600;
+    padding:2px 10px;border-radius:20px;margin-left:8px;vertical-align:middle}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:18px;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5;padding-top:4px}
+  .tab{padding:11px 16px;border:none;background:transparent;cursor:pointer;font-weight:600;font-size:13.5px;color:var(--ink-soft);border-bottom:3px solid transparent;margin-bottom:-2px;font-family:inherit;border-radius:8px 8px 0 0}
+  .tab:hover{background:#eef3ee;color:var(--ink)}
+  .tab.active{color:var(--accent-d);border-bottom-color:var(--accent);background:#fff}
+  .panel{display:none} .panel.active{display:block;animation:fade .2s}
+  @keyframes fade{from{opacity:.4}to{opacity:1}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:18px}
+  .card h2{font-size:16px;margin:0 0 4px;display:flex;align-items:center;gap:9px}
+  .card h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+  .card h2 .dot.land{background:var(--blue)} .card h2 .dot.bldg{background:var(--amber)} .card h2 .dot.debt{background:var(--rose)}
+  .card .hint{color:var(--ink-soft);font-size:12.5px;margin:0 0 16px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px 8px;text-align:right;font-variant-numeric:tabular-nums}
+  th:first-child,td:first-child{text-align:left}
+  .heir-table th{font-size:12px;color:var(--ink-soft);font-weight:600;border-bottom:1px solid var(--line);text-align:left;padding-bottom:8px}
+  .heir-table td{border-bottom:1px solid #f0f4ef;text-align:left}
+  input[type=text],select,input[type=number]{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:9px;
+    font-size:14px;color:var(--ink);background:#fff;font-family:inherit}
+  input[type=number]{text-align:right}
+  input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-l)}
+  input[readonly]{background:#f3f6f2;color:var(--ink-soft)}
+  .num-in{position:relative}
+  .num-in .unit{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:12px;pointer-events:none}
+  .num-in input{padding-right:34px}
+  .asset-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .asset-col h3{font-size:13.5px;margin:0 0 10px;padding:6px 10px;border-radius:8px}
+  .field{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .field label{flex:0 0 120px;font-size:13.5px;color:var(--ink)}
+  .field .num-in{flex:1}
+  .btn{border:none;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+  .btn-add{background:var(--accent-l);color:var(--accent-d)} .btn-add:hover{background:#dcefe5}
+  .btn-land{background:var(--blue-l);color:#2f6a94} .btn-land:hover{background:#dcebf5}
+  .btn-bldg{background:var(--amber-l);color:#a56a15} .btn-bldg:hover{background:#f8e9cf}
+  .btn-debt{background:var(--rose-l);color:#b45252} .btn-debt:hover{background:#f7dede}
+  .slot-chip{display:inline-flex;align-items:center;gap:2px;background:#eef6f0;border:1px solid #d7e8de;border-radius:20px;padding:3px 10px;font-size:12px;color:var(--ink)}
+  .slot-chip a{color:var(--accent-d);text-decoration:none;font-weight:600}
+  .btn-ghost{background:#f1f5f0;color:var(--ink)} .btn-ghost:hover{background:#e6ece5}
+  .btn-x{background:transparent;color:var(--rose);border:1px solid #f0dada;padding:5px 10px;border-radius:8px;font-size:12px;cursor:pointer}
+  .btn-x:hover{background:#fbeeee}
+  .btn-sm{padding:4px 10px;font-size:12px;border-radius:8px}
+  .scrollx{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  .detail{min-width:100%;border-collapse:collapse;white-space:nowrap}
+  .detail th{background:#f4f8f4;font-size:11.5px;color:var(--ink-soft);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--line);text-align:center}
+  .detail td{padding:6px 6px;border-bottom:1px solid #f0f4ef;text-align:center;vertical-align:middle}
+  .detail input[type=text],.detail input[type=number],.detail select{padding:5px 7px;font-size:13px}
+  .detail .tprice{font-weight:700;background:#eef7f1}
+  .detail tfoot td{background:#fafcfa;font-weight:700;font-size:13.5px;border-top:2px solid var(--line)}
+  .frac{display:flex;align-items:center;gap:3px;justify-content:center}
+  .frac input{width:44px;text-align:center}
+  .radio-cell{display:flex;flex-direction:column;gap:3px;align-items:flex-start;font-size:12px}
+  .radio-cell label{display:flex;align-items:center;gap:4px;white-space:nowrap}
+  .radio-cell input[type=number]{width:104px}
+  .chk{width:16px;height:16px;accent-color:var(--accent)}
+  .result-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:15px 16px;box-shadow:var(--shadow)}
+  .kpi .lab{font-size:12px;color:var(--ink-soft);margin-bottom:5px}
+  .kpi .val{font-size:23px;font-weight:700;letter-spacing:.01em}
+  .kpi .val small{font-size:13px;font-weight:600;color:var(--ink-soft);margin-left:3px}
+  .kpi.tax{background:linear-gradient(135deg,#fef6ea,#fdefe0)} .kpi.tax .val{color:#c8791d}
+  .kpi.after{background:linear-gradient(135deg,#eef7f1,#e7f4ec)} .kpi.after .val{color:var(--accent-d)}
+  .flow{background:#fafcfa;border:1px solid var(--line);border-radius:12px;padding:6px 16px;margin-bottom:18px}
+  .flow .row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed #eef2ee;font-size:13.5px}
+  .flow .row:last-child{border-bottom:none}
+  .flow .row.total{font-weight:700;font-size:15px;color:var(--ink)}
+  .flow .row .v{font-variant-numeric:tabular-nums}
+  .flow .row.minus .v{color:var(--rose)} .flow .row.plus .v{color:var(--blue)}
+  .result-table th{background:#f6f9f6;font-size:12.5px;color:var(--ink-soft);font-weight:600;border-bottom:1px solid var(--line);white-space:nowrap}
+  .result-table td{border-bottom:1px solid #f2f5f1;font-size:13.5px}
+  .result-table tr.sum td{font-weight:700;background:#fbfdfb}
+  .result-table td.name{font-weight:600}
+  .bars{margin-top:8px}
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;font-size:13px}
+  .bar-row .bl{flex:0 0 100px;color:var(--ink)}
+  .bar-track{flex:1;background:#f0f4ef;border-radius:6px;height:20px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px}
+  .bar-row .bv{flex:0 0 150px;text-align:right;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+  .note{background:var(--amber-l);border:1px solid #f3e2c4;border-radius:12px;padding:14px 16px;font-size:12.5px;color:#8a6a2f;line-height:1.7}
+  .note b{color:#7a5a20}
+  .foot{color:var(--ink-soft);font-size:12px;text-align:center;margin-top:26px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.asset-grid,.two{grid-template-columns:1fr}.result-hero{grid-template-columns:1fr 1fr}}
+  .tag{font-size:11px;padding:1px 7px;border-radius:20px;font-weight:600}
+  .tag.wari{background:#fbeeee;color:#c05a5a} .tag.sp{background:var(--blue-l);color:#356a90}
+  .sub{font-size:12px;color:var(--ink-soft)}
+  .divtbl{min-width:100%;border-collapse:collapse;white-space:nowrap}
+  .divtbl th{background:#f4f8f4;font-size:12px;color:var(--ink-soft);font-weight:600;padding:8px 8px;border-bottom:1px solid var(--line);text-align:center;position:sticky;top:0}
+  .divtbl td{padding:5px 6px;border-bottom:1px solid #f0f4ef;text-align:right;vertical-align:middle}
+  .divtbl td.lab{text-align:left;font-size:13px;max-width:230px;white-space:normal}
+  .divtbl input[type=number]{width:118px;text-align:right;font-size:13px;padding:5px 7px}
+  .divtbl .price{font-weight:600;color:var(--ink)}
+  .divtbl .rem{font-weight:600}
+  .divtbl .rem.ok{color:var(--accent-d)} .divtbl .rem.bad{color:var(--rose)}
+  .divtbl tr.subt td{background:#f7faf7;font-weight:600}
+  .divtbl tfoot td{background:#fafcfa;font-weight:700;border-top:2px solid var(--line);font-size:13px}
+  .divtbl .sect td{background:#eef4f8;font-weight:700;color:#356a90;text-align:left;font-size:12.5px}
+  .divtbl .sect.d td{background:var(--rose-l);color:#b45252}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  .report{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums}
+  .report th,.report td{border:1px solid #e2e8e1;padding:4px 8px;text-align:right;white-space:nowrap}
+  .report th{background:#f4f8f4;color:var(--ink-soft);font-weight:600;text-align:center}
+  .report td.lab{text-align:left;white-space:normal;min-width:220px}
+  .report tr.sec td{background:#eef4f8;color:#356a90;font-weight:700;text-align:left}
+  .report tr.sub td{background:#f7faf7;font-weight:600}
+  .report tr.big td{background:#eaf6f0;font-weight:700;color:var(--accent-d)}
+  .report tr.ref td{background:#fffaf0}
+  .report td.neg{color:var(--rose)} .report .neg{color:var(--rose)}
+  .report input{width:100px;text-align:right;padding:3px 5px;font-size:12px;border:1px solid var(--line);border-radius:6px}
+  .print-title{display:none}
+  @media print{
+    .print-title{display:block!important;font-size:22px;font-weight:800;color:var(--ink);border-bottom:3px solid var(--accent);padding:0 0 8px;margin:0 0 14px;letter-spacing:.02em}
+    .print-hide-h2{display:none!important}
+  }
+  @media print{
+    body{background:#fff}
+    .wrap{max-width:none;padding:0;margin:0}
+    .tabs,.toolbar,header.top,.foot,#slotBar{display:none!important}
+    .btn,.btn-x,.btn-sm{display:none!important}
+    .panel .hint{display:none!important}
+    .card{box-shadow:none;border:none;padding:0;margin:0 0 6px}
+    .card h2{font-size:14px;margin-bottom:6px}
+    .scrollx{overflow:visible!important;border:none!important;border-radius:0!important}
+    /* 入力欄は罫線・背景を消して書面らしく（値は文字として表示） */
+    input[type=text],input[type=number],select{border:none!important;background:transparent!important;-webkit-appearance:none;appearance:none;padding:1px 2px!important;box-shadow:none!important;color:#000!important}
+    input[readonly]{background:transparent!important;color:#000!important}
+    .report{font-size:10px}
+    .report td.z0{color:transparent!important}
+    .report tr.zrow{display:none!important}
+    .kpi{break-inside:avoid}
+    .card,.result-hero,table,tr,.flow{break-inside:avoid}
+    /* 印刷対象タブのみ表示（表示中タブが対象） */
+    body.printing .panel:not(.printtarget){display:none!important}
+    #planTabs .btn{display:none!important}
+  }
+  /* まとめて印刷：選択モーダル */
+  .pm-overlay{position:fixed;inset:0;background:rgba(40,50,45,.4);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px}
+  .pm-box{background:#fff;border-radius:16px;padding:22px 24px;max-width:520px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+  .pm-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pm-item{display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;font-size:13.5px;cursor:pointer;background:#fafcfa}
+  .pm-item:hover{background:#f2f7f2}
+  .pm-item input{width:16px;height:16px;accent-color:var(--accent)}
+  @media (max-width:520px){ .pm-list{grid-template-columns:1fr} }
+  /* まとめて印刷：出力レイアウト */
+  .pp-title{display:none}
+  @page{ size:A4 portrait; margin:10mm; }
+  @media print{
+    .pm-overlay{display:none!important}
+    body.batchprint .panel{display:none!important}
+    body.batchprint .panel.pp-on{display:block!important}
+    body.batchprint .panel.pp-on{break-before:page;page-break-before:always}
+    body.batchprint .panel.pp-first{break-before:auto;page-break-before:auto}
+    body.batchprint .print-title{display:none!important}
+    body.batchprint .pp-title{display:block!important;font-size:22px;font-weight:800;color:#000;border-bottom:3px solid var(--accent);padding:0 0 8px;margin:0 0 14px;letter-spacing:.02em}
+    @page a4pg{ size:A4 portrait; margin:10mm; }
+    @page a3pg{ size:A3 portrait; margin:10mm; }
+    body.batchprint .pp-a4{ page:a4pg; }
+    body.batchprint .pp-a3{ page:a3pg; }
+  }
+  @media print{
+    :root{ --ink:#000; --ink-soft:#2b2b2b; --line:#9aa39d; }
+    body,.card,.flow,.report,.divtbl,.result-table,td,th{ color:#000; }
+    .sub,.kpi .lab,.kpi .val small,.report th,.divtbl th,.heir-table th,.detail th,.result-table th,.bar-row .bv{ color:#1c1c1c!important; font-weight:700; }
+    .note{ color:#1f1f1f!important; } .note b{ color:#000!important; }
+    .kpi .val{ font-weight:800; }
+    .report td.lab,.divtbl td.lab{ font-weight:600; color:#000; }
+    .report tr.sec td{ color:#0f3a58!important; font-weight:800; }
+    .divtbl .sect td{ color:#0f3a58!important; font-weight:800; }
+    .divtbl .sect.d td,.report tr.minus .v,.flow .row.minus .v{ color:#8a1f1f!important; }
+    .print-title{ color:#000!important; }
+    .report td.z0{ color:transparent!important; }
+  }
+
+  .warn{background:#fdecea;border:1px solid #f3c9c3;color:#b23b34;padding:11px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;font-weight:600}
+  .print-stamp{display:none}
+  @media print{
+    .print-stamp{display:block!important;position:fixed;top:0;right:0;font-size:7px;line-height:1;color:#9a9a9a!important;font-weight:400!important;letter-spacing:.04em;z-index:9999;background:transparent}
+  }
+</style>
+</head>
+<body>
+<div id="printStamp" class="print-stamp" aria-hidden="true"></div>
+<div class="wrap">
+  <header class="top">
+    <h1>相続シミュレーション<span class="badge">たたき台 v2.4</span> <span class="badge" style="background:#eef2ee;color:var(--ink-soft)">最終更新日 2026-09-24</span></h1>
+    <p>財産を種類別の明細で入力し、相続人ごと・資産ごとに取得価額を割り振って相続税と税引後財産をシミュレーションできます。</p>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-add btn-sm" onclick="exportJSON()">保存（JSON）</button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('fileIn').click()">読込（JSON）</button>
+      <input type="file" id="fileIn" accept="application/json,.json" style="display:none" onchange="importJSON(this)">
+      <button class="btn btn-ghost btn-sm" onclick="loadSample()">サンプルに戻す</button>
+      <button class="btn btn-ghost btn-sm" onclick="clearInputs()">全クリア</button>
+      <button class="btn btn-add btn-sm" onclick="saveSlot()">ブラウザに一時保存</button>
+      <button class="btn btn-ghost btn-sm" onclick="printCurrent()">🖨 表示中のタブを印刷</button>
+      <button class="btn btn-ghost btn-sm" onclick="openPrintDialog()">🖨 まとめて印刷</button>
+      <span class="sub">入力内容はこのブラウザに自動保存されます。案件の受け渡し・バックアップはJSON保存をご利用ください。</span>
+    </div>
+    <div id="slotBar" style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"></div>
+  </header>
+
+  <div class="print-title" id="printTitle"></div>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="p_heir">① 相続人</button>
+    <button class="tab" data-tab="p_re">② 不動産</button>
+    <button class="tab" data-tab="p_fin">③ 金融資産</button>
+    <button class="tab" data-tab="p_other">④ その他資産</button>
+    <button class="tab" data-tab="p_debt">⑤ 負債・控除</button>
+    <button class="tab" data-tab="p_addon">⑥ 加算・その他</button>
+    <button class="tab" data-tab="p_div">⑦ 財産分割</button>
+    <button class="tab" data-tab="p_res">⑧ 結果</button>
+    <button class="tab" data-tab="p_report">⑨ 分割案(帳票)</button>
+    <button class="tab" data-tab="p_second">⑩ 二次相続</button>
+    <button class="tab" data-tab="p_compare">⑪ 案比較</button>
+    <button class="tab" data-tab="p_taisaku">⑫ 相続対策</button>
+    <button class="tab" data-tab="p_list">⑬ 財産目録</button>
+  </div>
+
+  <!-- ① 相続人 -->
+  <div class="panel active" id="p_heir">
+    <div class="card">
+      <h2><span class="dot"></span>基本情報</h2>
+      <div class="two">
+        <div class="field"><label>被相続人</label><input type="text" id="deceased" placeholder="例：相続 太郎"></div>
+        <div class="field"><label>基準日</label><input type="text" id="baseDate" placeholder="例：令和8年"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>相続人・受遺者</h2>
+      <p class="hint">続柄から法定相続分・法定相続人の数・2割加算を自動判定します。取得財産は「⑥財産分割」で割り振った金額が自動反映されます。</p>
+      <table class="heir-table">
+        <thead><tr><th style="width:28%">氏名</th><th style="width:20%">続柄</th><th style="width:18%">法定相続分</th><th style="width:14%">2割加算</th><th style="width:16%">取得財産(万円)</th><th></th></tr></thead>
+        <tbody id="heirBody"></tbody>
+      </table>
+      <div style="margin-top:12px"><button class="btn btn-add" onclick="addHeir()">＋ 相続人を追加</button></div>
+    </div>
+  </div>
+
+  <!-- ② 不動産 -->
+  <div class="panel" id="p_re">
+    <div class="card">
+      <h2><span class="dot land"></span>土地（明細）</h2>
+      <p class="hint">路線価方式：「路線」を選び 面積・㎡単価。倍率方式：「倍率」を選び 固定資産税評価額・倍率。価額＝評価額×所有権割合×調整（四捨五入）。単位：円。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>地目</th><th>所在場所</th><th>利用状況</th><th>面積(㎡)</th><th>評価方式</th><th>所有権割合</th><th>調整</th><th>計算</th><th>価額(円)</th><th>小規模宅地<br>減額対象</th><th>注記</th><th></th></tr></thead>
+        <tbody id="landBody"></tbody>
+        <tfoot><tr><td colspan="8" style="text-align:right">土地 合計</td><td class="tprice" id="landSum">0</td><td colspan="3" class="sub" id="landSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-land" onclick="addLand()">＋ 土地を追加</button></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot bldg"></span>建物・家屋（明細）</h2>
+      <p class="hint">価額＝固定資産税評価額×所有権割合×調整（四捨五入）。「計算」を外すと価額を手入力できます。単位：円。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>細目</th><th>利用状況</th><th>所在場所</th><th>床面積(㎡)</th><th>固定資産税<br>評価額(円)</th><th>所有権割合</th><th>調整</th><th>計算</th><th>価額(円)</th><th>注記</th><th></th></tr></thead>
+        <tbody id="bldgBody"></tbody>
+        <tfoot><tr><td colspan="8" style="text-align:right">建物 合計</td><td class="tprice" id="bldgSum">0</td><td colspan="2" class="sub" id="bldgSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-bldg" onclick="addBldg()">＋ 建物を追加</button></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot land"></span>小規模宅地等の特例</h2>
+      <p class="hint">土地明細で「小規模宅地減額対象」にチェックした土地が対象です。特例の種類を選ぶと、減額割合・限度面積・減額金額を自動計算します。複数の場合は限度面積を自動調整します（居住用330㎡＋事業用400㎡の完全併用、貸付事業用を含む場合は200㎡換算で調整）。減額を最大化するよう自動配分します。※土地明細で「面積(㎡)」を入力してください。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>対象土地</th><th>特例の種類</th><th>総地積(㎡)</th><th>㎡単価(円)</th><th>減額割合</th><th>適用地積(㎡)</th><th>減額金額(円)</th></tr></thead>
+        <tbody id="shokiboBody"></tbody>
+        <tfoot><tr><td colspan="6" style="text-align:right">減額金額 合計</td><td class="tprice" id="shokiboSum">0</td></tr></tfoot>
+      </table></div>
+      <div id="shokiboSummary" class="note" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- ③ 金融資産 -->
+  <div class="panel" id="p_fin">
+    <div class="card">
+      <h2><span class="dot"></span>預貯金（明細）</h2>
+      <p class="hint">取引銀行名・口座番号・種別・残高（円）を入力します。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>取引銀行名</th><th>支店名</th><th>種別</th><th>口座番号</th><th>残高(円)</th><th>注記</th><th></th></tr></thead>
+        <tbody id="depBody"></tbody>
+        <tfoot><tr><td colspan="4" style="text-align:right">預貯金 合計</td><td class="tprice" id="depSum">0</td><td colspan="2" class="sub" id="depSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-add" onclick="addG('deposits')">＋ 預貯金を追加</button></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>有価証券（明細）</h2>
+      <p class="hint">種類・銘柄・数量・単価（円）を入力。「計算」にチェックで 数量×単価 を自動計算します。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>種類</th><th>銘柄</th><th>証券会社等</th><th>数量</th><th>単価(円)</th><th>計算</th><th>価額(円)</th><th>注記</th><th></th></tr></thead>
+        <tbody id="secBody"></tbody>
+        <tfoot><tr><td colspan="6" style="text-align:right">有価証券 合計</td><td class="tprice" id="secSum">0</td><td colspan="2" class="sub" id="secSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-add" onclick="addG('secs')">＋ 有価証券を追加</button></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>その他の金融資産（明細）</h2>
+      <p class="hint">現金・出資金・貸付金・暗号資産など。明細・価額（円）を入力します。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>種類</th><th>明細</th><th>価額(円)</th><th>注記</th><th></th></tr></thead>
+        <tbody id="ofBody"></tbody>
+        <tfoot><tr><td colspan="2" style="text-align:right">合計</td><td class="tprice" id="ofSum">0</td><td colspan="2" class="sub" id="ofSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-add" onclick="addG('otherfin')">＋ その他金融資産を追加</button></div>
+    </div>
+  </div>
+
+  <!-- ④ その他資産 -->
+  <div class="panel" id="p_other">
+    <div class="card">
+      <h2><span class="dot"></span>生命保険金（明細）</h2>
+      <p class="hint">みなし相続財産。非課税枠（500万円×法定相続人の数）の判定に使われます。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>保険会社</th><th>明細</th><th>受取額(円)</th><th>注記</th><th></th></tr></thead>
+        <tbody id="lifeBody"></tbody>
+        <tfoot><tr><td colspan="2" style="text-align:right">合計</td><td class="tprice" id="lifeSum">0</td><td colspan="2" class="sub" id="lifeSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-add" onclick="addG('life')">＋ 生命保険金を追加</button></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>退職手当金（明細）</h2>
+      <p class="hint">みなし相続財産。非課税枠（500万円×法定相続人の数）の判定に使われます。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>支給元</th><th>明細</th><th>金額(円)</th><th>注記</th><th></th></tr></thead>
+        <tbody id="retBody"></tbody>
+        <tfoot><tr><td colspan="2" style="text-align:right">合計</td><td class="tprice" id="retSum">0</td><td colspan="2" class="sub" id="retSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-add" onclick="addG('retire')">＋ 退職手当金を追加</button></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>自社株式・その他の財産（明細）</h2>
+      <p class="hint">自社株式・家財・自動車・貴金属・書画骨董など。区分・明細・価額（円）を入力します。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>区分</th><th>明細</th><th>数量</th><th>単価(円)</th><th>計算</th><th>価額(円)</th><th>注記</th><th></th></tr></thead>
+        <tbody id="oaBody"></tbody>
+        <tfoot><tr><td colspan="5" style="text-align:right">合計</td><td class="tprice" id="oaSum">0</td><td colspan="2" class="sub" id="oaSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-add" onclick="addG('otherAsset')">＋ その他資産を追加</button></div>
+    </div>
+  </div>
+
+  <!-- ⑤ 負債・控除 -->
+  <div class="panel" id="p_debt">
+    <div class="card">
+      <h2><span class="dot debt"></span>負債（明細）</h2>
+      <p class="hint">借入金・未払金・未払税金など。明細・金額（円）を入力します。財産総額から控除されます。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>種類</th><th>明細</th><th>金額(円)</th><th>注記</th><th></th></tr></thead>
+        <tbody id="debtBody"></tbody>
+        <tfoot><tr><td colspan="2" style="text-align:right">負債 合計</td><td class="tprice" id="debtSum">0</td><td colspan="2" class="sub" id="debtSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-debt" onclick="addG('debts')">＋ 負債を追加</button></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot debt"></span>葬式費用（明細）</h2>
+      <p class="hint">通夜・葬儀・火葬・お布施など。明細・金額（円）を入力します。財産総額から控除されます。</p>
+      <div class="scrollx"><table class="detail">
+        <thead><tr><th>明細</th><th>金額(円)</th><th>注記</th><th></th></tr></thead>
+        <tbody id="funBody"></tbody>
+        <tfoot><tr><td style="text-align:right">葬式費用 合計</td><td class="tprice" id="funSum">0</td><td colspan="2" class="sub" id="funSumMan">（0 万円）</td></tr></tfoot>
+      </table></div>
+      <div style="margin-top:12px"><button class="btn btn-debt" onclick="addG('funerals')">＋ 葬式費用を追加</button></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>その他の控除・加算</h2>
+      <div class="asset-grid">
+        <div class="asset-col"><div class="field"><label>小規模宅地減額</label><div class="num-in"><input type="number" id="d_takuchi" value="0" readonly><span class="unit">万円</span></div></div></div>
+        <div class="asset-col"><div class="field"><label>生前贈与加算</label><div class="num-in"><input type="number" id="d_gift" value="0" readonly><span class="unit">万円</span></div></div></div>
+      </div>
+      <p class="hint" style="margin:10px 0 0">※小規模宅地等の減額は②不動産タブ、生前贈与加算は⑥加算・その他タブから自動反映されます（読み取り専用）。</p>
+    </div>
+  </div>
+
+  <!-- ⑥ 加算・その他 -->
+  <div class="panel" id="p_addon">
+    <div class="card">
+      <h2><span class="dot"></span>生前贈与加算</h2>
+      <p class="hint">相続開始前の贈与を相続人ごとに入力します（円）。課税価格に加算されます。暦年課税は加算対象期間分、相続時精算課税は贈与額を入力してください。⑧結果・⑨帳票に反映されます。</p>
+      <div class="scrollx"><table class="detail" id="addonGift"></table></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>税額控除</h2>
+      <p class="hint">各相続人に適用する税額控除を入力します（円）。配偶者の税額軽減は自動計算のためここには含めません。</p>
+      <div class="scrollx"><table class="detail" id="addonDed"></table></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>代償分割・調整</h2>
+      <p class="hint">代償分割金（受け取る人はプラス／支払う人はマイナス）や、税引後財産の調整額を相続人ごとに入力します（円）。</p>
+      <div class="scrollx"><table class="detail" id="addonDaisho"></table></div>
+    </div>
+  </div>
+
+  <!-- ⑦ 財産分割 -->
+  <div class="panel" id="p_div">
+    <div class="card">
+      <h2><span class="dot"></span>財産分割シミュレーション</h2>
+      <p class="hint">各資産について、相続人ごとに取得する価額（円）を入力します。「残」が0になるまで割り振ってください。負債・葬式費用は負担する人に配分されます。</p>
+      <div style="background:#f4f8f4;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:14px">
+        <div class="sub" style="margin-bottom:8px">分割案（財産・相続人は共通。分け方だけを案ごとに保持します。切り替えると結果・帳票・二次相続もその案で計算されます）</div>
+        <div id="planTabs" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
+      </div>
+      <div class="toolbar">
+        <button class="btn btn-ghost btn-sm" onclick="autoAll()">法定相続分で自動配分</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearAll()">配分をクリア</button>
+        <span class="sub">※各資産の「残」が0なら過不足なく分割できています。数値未入力の財産は法定相続分で計算します。</span>
+      </div>
+      <div id="divWarn"></div>
+      <div class="scrollx"><table class="divtbl" id="divTable"></table></div>
+    </div>
+  </div>
+
+  <!-- ⑦ 結果 -->
+  <div class="panel" id="p_res">
+    <div class="card">
+      <h2><span class="dot"></span>計算結果</h2>
+      <div id="resWarn"></div>
+      <div class="result-hero">
+        <div class="kpi"><div class="lab">財産総額</div><div class="val"><span id="r_total">0</span><small>万円</small></div></div>
+        <div class="kpi"><div class="lab">基礎控除額</div><div class="val"><span id="r_basic">0</span><small>万円</small></div></div>
+        <div class="kpi tax"><div class="lab">相続税の納付税額(合計)</div><div class="val"><span id="r_tax">0</span><small>万円</small></div></div>
+        <div class="kpi after"><div class="lab">税引後の財産</div><div class="val"><span id="r_after">0</span><small>万円</small></div></div>
+      </div>
+      <div class="two">
+        <div><h3 style="font-size:13.5px;margin:0 0 6px;color:var(--ink-soft)">課税価格の計算</h3><div class="flow" id="flow"></div></div>
+        <div><h3 style="font-size:13.5px;margin:0 0 6px;color:var(--ink-soft)">資産構成</h3><div class="bars" id="bars"></div></div>
+      </div>
+      <h3 style="font-size:13.5px;margin:18px 0 6px;color:var(--ink-soft)">各人の取得額と税額</h3>
+      <table class="result-table">
+        <thead><tr><th>氏名</th><th>続柄</th><th>取得財産</th><th>取得割合</th><th>相続税額</th><th>配偶者軽減等</th><th>納付税額</th><th>税引後</th></tr></thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+    <div class="note">
+      <b>ご注意（たたき台の計算前提）</b><br>
+      ・不動産は路線価／倍率／固定資産税評価額方式で自動計算（四捨五入）。金額は内部で万円換算して計算します。<br>
+      ・相続税の総額は「課税遺産総額を法定相続分で按分 → 速算表 → 合算」の標準式。配偶者軽減は法定相続分または1.6億円のいずれか多い額まで、2割加算は続柄から自動適用。<br>
+      ・生前贈与加算・小規模宅地等の減額は入力額をそのまま反映する簡易版です（各種税額控除は未対応）。実務判断は税理士にご確認ください。
+    </div>
+    <div class="note" style="background:var(--amber-l);border:1px solid #f3e2c4;color:#8a6a2f">
+      <b>【ご注意】</b>本シミュレーションは、現時点で判明している資産に基づく簡易な試算であり、その正確性を必ずしも保証するものではありません。今後の資料の確認・財産評価の精査・分割内容の確定等により、税額は変動します。実際の申告・納税にあたっては担当税理士（寺尾英司税理士事務所）にご確認ください。
+    </div>
+  </div>
+  <div class="panel" id="p_report">
+    <div class="card">
+      <h2><span class="dot"></span>財産分割案 ＆ 相続税概算（帳票）</h2>
+      <p class="hint">⑥財産分割の入力から自動生成します。代償分割・生前贈与（相続時精算課税／暦年課税）・各種税額控除・調整は、下表の該当セルに直接入力できます（円）。千円未満切捨てなどの端数処理を反映します。</p>
+      <div class="toolbar"><button class="btn btn-ghost btn-sm" onclick="window.print()">印刷 / PDF保存</button><span class="sub">※この帳票のみ出力されます。用紙はA3縦・1ページに自動調整します（単位：円）。</span></div>
+      <div class="scrollx"><table class="report" id="reportTable"></table></div>
+      <div class="report-sign" style="margin-top:16px">
+        <div class="note" style="background:var(--amber-l);border:1px solid #f3e2c4;color:#8a6a2f">
+          <b>【ご注意】</b>本シミュレーションは、現時点で判明している資産に基づく簡易な試算であり、その正確性を必ずしも保証するものではありません。今後の資料の確認・財産評価の精査・分割内容の確定等により、税額は変動します。実際の申告・納税にあたっては担当税理士にご確認ください。
+        </div>
+        <div style="margin-top:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fafcfa;font-size:12.5px;line-height:1.9">
+          <div style="font-weight:700;font-size:13.5px;color:var(--ink)">寺尾英司税理士事務所</div>
+          大阪市北区芝田2-3-19　東洋ビル本館215号<br>
+          TEL：06-6136-8750　　Email：zaimu88@tkcnf.or.jp
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑩ 二次相続 -->
+  <div class="panel" id="p_second">
+    <div class="card">
+      <h2><span class="dot"></span>二次相続シミュレーション</h2>
+      <p class="hint">配偶者が今回（一次相続）で取得した財産は、将来の配偶者自身の相続（二次相続）で子へ引き継がれます。配偶者の固有財産を入力すると、二次相続税と一次＋二次の合計税額を試算します（子は法定相続分で均等取得と仮定した概算）。</p>
+      <div class="asset-grid">
+        <div class="asset-col"><div class="field"><label>配偶者の固有財産</label><div class="num-in"><input type="number" id="sec2_own" value="0"><span class="unit">円</span></div></div></div>
+        <div class="asset-col"><div class="field"><label>二次の債務・葬式費用</label><div class="num-in"><input type="number" id="sec2_debt" value="0"><span class="unit">円</span></div></div></div>
+      </div>
+      <div id="sec2Result"></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>二次相続の対策</h2>
+      <p class="hint">二次相続（配偶者→子）で使える対策を適用した場合の効果を試算します。二次の課税価格・二次相続税・一次＋二次の合計に反映され、下の表とグラフの「最適な配分」も対策込みで再計算されます。※概算です。</p>
+      <div class="asset-grid">
+        <div class="asset-col">
+          <div class="field"><label style="flex:0 0 200px">生命保険の非課税枠を活用</label><input type="checkbox" id="sec2_life" class="chk" onchange="renderSecond()"></div>
+          <p class="sub" style="margin:0 0 10px">現預金を保険に組替。二次の課税価格から 500万円×二次の法定相続人数 を控除。</p>
+          <div class="field"><label style="flex:0 0 200px">二次の養子（追加人数）</label><div class="num-in"><input type="number" id="sec2_adopt" value="0" min="0" oninput="renderSecond()"><span class="unit">人</span></div></div>
+        </div>
+        <div class="asset-col">
+          <div class="field"><label style="flex:0 0 200px">二次までの生前贈与・圧縮</label><div class="num-in"><input type="number" id="sec2_gift" value="0" oninput="renderSecond()"><span class="unit">円</span></div></div>
+          <p class="sub" style="margin:0">配偶者が子・孫へ生前贈与するなどで二次の課税財産を圧縮する額。</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>合計税額カーブ（一次＋二次）</h2>
+      <p class="hint">横軸＝配偶者の一次取得額、縦軸＝相続税額。<span style="color:#4a90c2;font-weight:700">一次</span>は配偶者に寄せるほど下がり、<span style="color:#e9a23b;font-weight:700">二次</span>は上がります。<span style="color:#2f8365;font-weight:700">合計</span>が谷（★＝最適）になる取得額が、二次まで見た目安です。<span style="color:#c8791d;font-weight:700">●</span>が現在の配分です。</p>
+      <div id="sec2Chart"></div>
+    </div>
+    <div class="card">
+      <h2><span class="dot"></span>配偶者の取得額と合計税額（一次＋二次）</h2>
+      <p class="hint">配偶者が一次相続で取得する財産額を変えたときの、一次・二次・合計の相続税額の目安です。配偶者の税額軽減で一次は下がりますが、二次で子の負担が増えるため、合計が最小になる取得額が二次まで含めた目安になります（概算）。</p>
+      <div class="scrollx"><table class="report" id="sec2Table"></table></div>
+    </div>
+  </div>
+
+  <!-- ⑪ 案比較 -->
+  <div class="panel" id="p_compare">
+    <div class="card">
+      <h2><span class="dot"></span>分割案の比較</h2>
+      <p class="hint">現在の分割内容を「案」として保存し、複数案の納付税額・税引後・各人の取得を並べて比較できます。各列の「読込」で保存した案を呼び出せます（現在の入力は上書きされます）。納付税額が最小の案に★が付きます。</p>
+      <div class="toolbar"><button class="btn btn-add btn-sm" onclick="addCase()">現在の内容を案として保存</button></div>
+      <div id="caseDel" style="margin-bottom:12px"></div>
+      <div class="scrollx"><table class="report" id="compareTable"></table></div>
+    </div>
+  </div>
+
+  <!-- ⑫ 相続対策 -->
+  <div class="panel" id="p_taisaku">
+    <div class="card">
+      <h2><span class="dot"></span>相続対策シミュレーション</h2>
+      <p class="hint">代表的な相続対策を適用した場合に、納付税額がどれだけ変わるかを試算します。ここでの試算は入力内容を変更しません（対策を「仮に」適用した概算です）。実際に反映したい対策は、各タブで入力してください。</p>
+      <div class="note" style="margin-bottom:16px">
+        <b>試算の前提</b>：現在の財産・相続人・分割内容をもとに、各対策を単独で適用した場合の概算です。<br>
+        ・生前贈与加算（暦年贈与の7年持ち戻し等）・贈与税・相次相続控除・小規模宅地の個別要件などは考慮していません。<br>
+        ・養子縁組は「法定相続人が1人増える」ものとして計算します（実子がいる場合、法定相続人に算入できる養子は1人まで／孫養子は2割加算対象）。<br>
+        ・実際の適用可否・金額は税理士にご確認ください。
+      </div>
+      <div class="result-hero" style="grid-template-columns:repeat(3,1fr)">
+        <div class="kpi"><div class="lab">現状の納付税額（合計）</div><div class="val"><span id="ts_now">0</span><small>万円</small></div></div>
+        <div class="kpi after"><div class="lab">対策メニューを併用した場合</div><div class="val"><span id="ts_all">0</span><small>万円</small></div></div>
+        <div class="kpi tax"><div class="lab">合計の節税効果</div><div class="val">−<span id="ts_save">0</span><small>万円</small></div></div>
+      </div>
+      <div id="ts_cards"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="dot"></span>財産の圧縮（生前贈与・不動産組替 等）</h2>
+      <p class="hint">生前贈与や現預金の不動産化などで課税財産を圧縮した場合の、相続税の減り方の目安です。スライダーを動かすと、圧縮額に対する税額の変化（≒限界税率）が確認できます。※7年加算・贈与税・評価減の個別計算は含まない概算です。</p>
+      <div class="field" style="max-width:640px">
+        <label>圧縮する課税財産</label>
+        <input type="range" id="ts_slider" min="0" max="10000" value="0" step="100" style="flex:1" oninput="document.getElementById('ts_amount').value=this.value;renderTaisaku()">
+        <div class="num-in" style="flex:0 0 150px"><input type="number" id="ts_amount" value="0" oninput="syncSlider(this.value)"><span class="unit">万円</span></div>
+      </div>
+      <div class="flow" id="ts_compress" style="margin-top:6px"></div>
+    </div>
+  </div>
+
+  <!-- まとめて印刷 選択モーダル -->
+  <div id="printModal" class="pm-overlay" style="display:none">
+    <div class="pm-box">
+      <h3 style="margin:0 0 4px;font-size:16px">まとめて印刷</h3>
+      <p class="sub" style="margin:0 0 12px">印刷するタブを選んでください。選んだ順ではなく番号順に、それぞれ改ページして出力します（⑨分割案のみA3縦・他はA4縦、各ページに番号付き見出し）。</p>
+      <div class="pm-tools" style="display:flex;gap:8px;margin-bottom:8px">
+        <button class="btn btn-ghost btn-sm" onclick="pmAll(true)">すべて選択</button>
+        <button class="btn btn-ghost btn-sm" onclick="pmAll(false)">すべて解除</button>
+        <button class="btn btn-ghost btn-sm" onclick="pmPreset()">帳票のみ（⑧⑨⑩）</button>
+      </div>
+      <div id="pmList" class="pm-list"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+        <button class="btn btn-ghost btn-sm" onclick="closePrintDialog()">閉じる</button>
+        <button class="btn btn-add btn-sm" onclick="runBatchPrint()">🖨 印刷する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑬ 財産目録 -->
+  <div class="panel" id="p_list">
+    <div class="card">
+      <h2><span class="dot"></span>財産目録（相続財産リスト）</h2>
+      <p class="hint">②〜⑤タブで入力した財産・債務を一覧にしたリストです。分割（誰が取得するか）は含みません。遺産分割協議の資料や相続人への説明用にご利用ください。</p>
+      <div class="toolbar"><button class="btn btn-ghost btn-sm" onclick="window.print()">印刷 / PDF保存</button><span class="sub">※印刷時はこの目録のみ出力されます（単位：円）。</span></div>
+      <div id="listSummary" style="max-width:520px;margin-bottom:14px"></div>
+      <div class="scrollx"><table class="report" id="listTable"></table></div>
+    </div>
+  </div>
+  <div class="foot">相続シミュレーション　バージョン v2.4　／　最終更新日：2026-09-24（令和8年9月24日）　／　金額単位：万円（明細・分割は円）<br>寺尾英司税理士事務所　大阪市北区芝田2-3-19 東洋ビル本館215号　TEL 06-6136-8750　Email zaimu88@tkcnf.or.jp</div>
+</div>
+
+<script>
+/* ===== 速算表 ===== */
+const TAX_TABLE=[{limit:1000,rate:.10,ded:0},{limit:3000,rate:.15,ded:50},{limit:5000,rate:.20,ded:200},
+  {limit:10000,rate:.30,ded:700},{limit:20000,rate:.40,ded:1700},{limit:30000,rate:.45,ded:2700},
+  {limit:60000,rate:.50,ded:4200},{limit:Infinity,rate:.55,ded:7200}];
+function taxOf(x){ if(x<=0) return 0; for(const b of TAX_TABLE){ if(x<=b.limit) return x*b.rate-b.ded; } return 0; }
+const SPOUSE_MIN=16000;
+const RELATIONS={
+  "配偶者":{spouse:true,heir:true,group:"spouse",wari:false},
+  "子":{spouse:false,heir:true,group:"child",wari:false},
+  "父母":{spouse:false,heir:true,group:"parent",wari:false},
+  "孫":{spouse:false,heir:true,group:"child",wari:true},
+  "兄弟姉妹":{spouse:false,heir:true,group:"sibling",wari:true},
+  "受遺者":{spouse:false,heir:false,group:"none",wari:true},
+  "その他":{spouse:false,heir:false,group:"none",wari:true}
+};
+const DEP_TYPES=["普通","定期","当座","貯蓄","その他"];
+const SEC_TYPES=["上場株式","投資信託","公社債","出資金","その他"];
+const OA_TYPES=["自社株式","家財","自動車","貴金属・書画骨董","その他"];
+let heirs=[], lands=[], bldgs=[], deposits=[], secs=[], otherfin=[], life=[], retire=[], jishaOther=[], debts=[], funerals=[], alloc={};
+
+function uid(){ return Math.random().toString(36).slice(2,8); }
+function STORE(name){ return {deposits,secs,otherfin,life,retire,otherAsset:jishaOther,debts,funerals}[name]; }
+const NEW={
+  deposits:()=>({id:uid(),bank:"",branch:"",type:"普通",account:"",price:0,note:""}),
+  secs:()=>({id:uid(),sectype:"上場株式",name:"",broker:"",qty:0,unit:0,calc:false,price:0,note:""}),
+  otherfin:()=>({id:uid(),type:"現金",detail:"",price:0,note:""}),
+  life:()=>({id:uid(),insurer:"",detail:"",price:0,note:""}),
+  retire:()=>({id:uid(),payer:"",detail:"",price:0,note:""}),
+  otherAsset:()=>({id:uid(),type:"自社株式",detail:"",qty:0,unit:0,calc:false,price:0,note:""}),
+  debts:()=>({id:uid(),type:"借入金",detail:"",price:0,note:""}),
+  funerals:()=>({id:uid(),detail:"",price:0,note:""})
+};
+const RENDER={deposits:renderDeposits,secs:renderSecs,otherfin:renderOtherfin,life:renderLife,retire:renderRetire,otherAsset:renderOtherAsset,debts:renderDebts,funerals:renderFunerals};
+
+/* ===== 初期データ（サンプル） ===== */
+function seed(){
+  const h1=uid(),h2=uid(),h3=uid();
+  heirs=[
+    {id:h1,name:"はなこ",rel:"配偶者",share:"",manual:false},
+    {id:h2,name:"けんた",rel:"子",share:"",manual:false},
+    {id:h3,name:"さくら",rel:"子",share:"",manual:false}
+  ];
+  document.getElementById('deceased').value="相続たろう";
+  document.getElementById('baseDate').value="令和8年";
+  const L1=uid(),B1=uid(),D1=uid(),S1=uid(),O1=uid(),LF1=uid(),R1=uid(),J1=uid(),DE1=uid(),F1=uid();
+  lands=[{id:L1,chimoku:"宅地",place:"東京都〇〇区1-1-1",use:"自宅",area:200,method:"rosen",unit:250000,koteih:0,bairitsu:0,pn:1,pd:1,adj:1,calc:true,price:50000000,shokibo:true,shokiboType:"特定居住用宅地等",note:"自宅敷地"}];
+  bldgs=[{id:B1,saimoku:"居宅",use:"自宅",place:"東京都〇〇区1-1-1",area:120,koteih:8000000,pn:1,pd:1,adj:1,calc:true,price:8000000,note:""}];
+  deposits=[{id:D1,bank:"みずほ銀行",branch:"〇〇支店",type:"普通",account:"1234567",price:30000000,note:""}];
+  secs=[{id:S1,sectype:"上場株式",name:"トヨタ自動車",broker:"〇〇証券",qty:1000,unit:3000,calc:true,price:3000000,note:""}];
+  otherfin=[{id:O1,type:"現金",detail:"手元現金",price:5000000,note:""}];
+  life=[{id:LF1,insurer:"〇〇生命",detail:"終身保険",price:20000000,note:""}];
+  retire=[{id:R1,payer:"〇〇株式会社",detail:"死亡退職金",price:10000000,note:""}];
+  jishaOther=[{id:J1,type:"自社株式",detail:"〇〇商事",qty:0,unit:0,calc:false,price:15000000,note:""}];
+  debts=[{id:DE1,type:"借入金",detail:"住宅ローン残債",price:5000000,note:""}];
+  funerals=[{id:F1,detail:"葬儀一式",price:3000000,note:""}];
+  alloc={};
+  alloc[L1]={[h1]:50000000};
+  alloc[B1]={[h1]:8000000};
+  alloc[D1]={[h2]:30000000};
+  alloc[S1]={[h3]:3000000};
+  alloc[O1]={[h3]:5000000};
+  alloc[LF1]={[h1]:10000000,[h2]:5000000,[h3]:5000000};
+  alloc[R1]={[h2]:10000000};
+  alloc[J1]={[h2]:15000000};
+  alloc[DE1]={[h2]:5000000};
+  alloc[F1]={[h1]:3000000};
+  bx={};
+  bx[h1]={greki:2000000};
+  bx[h2]={greki:2000000};
+  bx[h3]={greki:2000000};
+  divPlans=[{id:uid(),name:'案1',alloc:alloc,bx:bx}]; activePlanIdx=0;
+}
+
+/* ===== 価額 ===== */
+function newLand(){ return {id:uid(),chimoku:"",place:"",use:"",area:0,method:"rosen",unit:0,koteih:0,bairitsu:0,pn:1,pd:1,adj:1,calc:true,price:0,shokibo:false,shokiboType:"特定居住用宅地等",note:""}; }
+function newBldg(){ return {id:uid(),saimoku:"",use:"",place:"",area:0,koteih:0,pn:1,pd:1,adj:1,calc:true,price:0,note:""}; }
+function landPrice(r){ const own=r.pd?r.pn/r.pd:0; let base=r.method==="rosen"?(r.area*r.unit):(r.koteih*r.bairitsu); return Math.round(base*own*r.adj); }
+function bldgPrice(r){ const own=r.pd?r.pn/r.pd:0; return Math.round(r.koteih*own*r.adj); }
+function calcPrice(r){ return r.calc?Math.round(r.qty*r.unit):Math.round(r.price); } // secs / otherAsset
+function plain(r){ return Math.round(r.price); }
+
+/* ===== ヘルパ ===== */
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function y(n){ return (Math.round(n)||0).toLocaleString("ja-JP"); }
+function man(n){ return (Math.round(n/10000*100)/100).toLocaleString("ja-JP",{maximumFractionDigits:2}); }
+function pf(s){ if(typeof s==="number") return s; if(!s) return 0; const v=parseFloat((""+s).replace(/,/g,'')); return isFinite(v)?v:0; }
+function pfShare(s){ if(typeof s==="number") return s; if(!s) return 0; s=(""+s).trim(); if(s.includes('/')){ const p=s.split('/').map(Number); return p[1]?p[0]/p[1]:0; } const v=parseFloat(s); return isFinite(v)?v:0; }
+function fmt(n){ if(!isFinite(n)) return "0"; return (Math.round(n*100)/100).toLocaleString("ja-JP",{maximumFractionDigits:2}); }
+function shareLabel(v){ if(v===0) return "－"; const fr=[[1,1],[1,2],[1,3],[2,3],[1,4],[3,4],[1,6],[1,8],[1,12]]; for(const [a,b] of fr){ if(Math.abs(v-a/b)<1e-6) return a+"/"+b; } return (Math.round(v*1000)/1000).toString(); }
+function opts(list,cur){ return list.map(k=>'<option '+(k===cur?'selected':'')+'>'+k+'</option>').join(''); }
+function setText(id,t){ const el=document.getElementById(id); if(el) el.textContent=t; }
+
+/* ===== タブ ===== */
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  b.classList.add('active'); document.getElementById(b.dataset.tab).classList.add('active');
+  if(b.dataset.tab==='p_div') renderDivision();
+  if(b.dataset.tab==='p_addon') renderAddon();
+  if(b.dataset.tab==='p_res') calc();
+  if(b.dataset.tab==='p_report') renderBunkatsu();
+  if(b.dataset.tab==='p_second') renderSecond();
+  if(b.dataset.tab==='p_compare') renderCompare();
+  if(b.dataset.tab==='p_taisaku') renderTaisaku();
+  if(b.dataset.tab==='p_list') renderList();
+});
+
+/* ===== 相続人 ===== */
+function autoShares(){
+  const legal=heirs.filter(h=>RELATIONS[h.rel].heir);
+  const hasSpouse=legal.some(h=>RELATIONS[h.rel].group==="spouse");
+  const children=legal.filter(h=>RELATIONS[h.rel].group==="child");
+  const parents=legal.filter(h=>RELATIONS[h.rel].group==="parent");
+  const siblings=legal.filter(h=>RELATIONS[h.rel].group==="sibling");
+  let bm=[],ss=0,bt=0;
+  if(children.length){bm=children;ss=1/2;bt=1/2;}
+  else if(parents.length){bm=parents;ss=2/3;bt=1/3;}
+  else if(siblings.length){bm=siblings;ss=3/4;bt=1/4;}
+  const res={}; heirs.forEach(h=>res[h.id]=0);
+  if(hasSpouse&&bm.length){ legal.filter(h=>RELATIONS[h.rel].group==="spouse").forEach(h=>res[h.id]=ss); bm.forEach(h=>res[h.id]=bt/bm.length); }
+  else if(hasSpouse&&!bm.length){ legal.filter(h=>RELATIONS[h.rel].group==="spouse").forEach(h=>res[h.id]=1); }
+  else if(!hasSpouse&&bm.length){ bm.forEach(h=>res[h.id]=1/bm.length); }
+  return res;
+}
+function effAllocOf(assetId,price,hid){
+  const auto=autoShares();
+  let assigned=0; heirs.forEach(h=>assigned+=(alloc[assetId]&&alloc[assetId][h.id])||0);
+  const entered=(alloc[assetId]&&alloc[assetId][hid])||0;
+  const rem=price-assigned;
+  return entered + (rem>1e-6 ? rem*(auto[hid]||0) : 0);
+}
+function hasUndividedAssets(){ let n=0; getAssets().forEach(a=>{ let assigned=0; heirs.forEach(h=>assigned+=(alloc[a.id]&&alloc[a.id][h.id])||0); if(a.price-assigned>1) n++; }); return n; }
+function updateWarnings(){ const n=hasUndividedAssets(); const msg=n>0?'<div class="warn">未分割の財産があるため、法定相続分での分割としています。（未分割の項目：'+n+'件）</div>':''; const dw=document.getElementById('divWarn'); if(dw) dw.innerHTML=msg; const rw=document.getElementById('resWarn'); if(rw) rw.innerHTML=msg; }
+function heirAmtYen(hid){ let s=0; getAssets().forEach(a=>s+=effAllocOf(a.id,a.price,hid)); getDebts().forEach(a=>s-=effAllocOf(a.id,a.price,hid)); return s; }
+function renderHeirs(){
+  const auto=autoShares(); const tb=document.getElementById('heirBody'); tb.innerHTML="";
+  heirs.forEach(h=>{ const rel=RELATIONS[h.rel]; const sv=h.manual?pfShare(h.share):auto[h.id]; const amtMan=heirAmtYen(h.id)/10000;
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="text" value="'+esc(h.name)+'" oninput="updH(\''+h.id+'\',\'name\',this.value)"></td>'+
+      '<td><select onchange="updH(\''+h.id+'\',\'rel\',this.value)">'+opts(Object.keys(RELATIONS),h.rel)+'</select></td>'+
+      '<td><input type="text" value="'+(h.manual?esc(h.share):shareLabel(sv))+'" title="編集で手動指定(小数/分数a/b可)" oninput="updH(\''+h.id+'\',\'share\',this.value)" style="text-align:center"></td>'+
+      '<td>'+(rel.wari?'<span class="tag wari">2割加算</span>':(rel.spouse?'<span class="tag sp">配偶者</span>':'－'))+'</td>'+
+      '<td style="text-align:right;font-weight:600">'+fmt(amtMan)+' <span class="sub">万</span></td>'+
+      '<td><button class="btn-x" onclick="delHeir(\''+h.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function addHeir(){ heirs.push({id:uid(),name:"",rel:"子",share:"",manual:false}); renderHeirs(); calc(); }
+function delHeir(id){ heirs=heirs.filter(h=>h.id!==id); Object.keys(alloc).forEach(a=>{ if(alloc[a]) delete alloc[a][id]; }); renderHeirs(); if(isActive('p_div'))renderDivision(); calc(); }
+function updH(id,key,value){ const h=heirs.find(x=>x.id===id); if(!h) return; if(key==='share'){ h.share=value; h.manual=(value.trim()!==""); } else h[key]=value; if(key==='rel') renderHeirs(); calc(); }
+function isActive(id){ return document.getElementById(id).classList.contains('active'); }
+
+/* ===== 不動産 ===== */
+function renderLands(){
+  const tb=document.getElementById('landBody'); tb.innerHTML="";
+  lands.forEach(r=>{ if(r.calc) r.price=landPrice(r); const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="text" style="width:70px" value="'+esc(r.chimoku)+'" oninput="updL(\''+r.id+'\',\'chimoku\',this.value)"></td>'+
+      '<td><input type="text" style="width:150px" value="'+esc(r.place)+'" oninput="updL(\''+r.id+'\',\'place\',this.value)"></td>'+
+      '<td><input type="text" style="width:90px" value="'+esc(r.use)+'" oninput="updL(\''+r.id+'\',\'use\',this.value)"></td>'+
+      '<td><input type="number" style="width:74px" value="'+r.area+'" oninput="updL(\''+r.id+'\',\'area\',this.value)"></td>'+
+      '<td><div class="radio-cell">'+
+        '<label><input type="radio" name="lm_'+r.id+'" '+(r.method==="rosen"?"checked":"")+' onchange="updL(\''+r.id+'\',\'method\',\'rosen\')">路線 ㎡単価<input type="number" '+(r.method==="rosen"?"":"disabled")+' value="'+r.unit+'" oninput="updL(\''+r.id+'\',\'unit\',this.value)"></label>'+
+        '<label><input type="radio" name="lm_'+r.id+'" '+(r.method==="bairitsu"?"checked":"")+' onchange="updL(\''+r.id+'\',\'method\',\'bairitsu\')">倍率 評価額<input type="number" '+(r.method==="bairitsu"?"":"disabled")+' value="'+r.koteih+'" oninput="updL(\''+r.id+'\',\'koteih\',this.value)"> ×<input type="number" style="width:56px" '+(r.method==="bairitsu"?"":"disabled")+' value="'+r.bairitsu+'" oninput="updL(\''+r.id+'\',\'bairitsu\',this.value)"></label>'+
+      '</div></td>'+
+      '<td><div class="frac"><input type="number" value="'+r.pn+'" oninput="updL(\''+r.id+'\',\'pn\',this.value)">/<input type="number" value="'+r.pd+'" oninput="updL(\''+r.id+'\',\'pd\',this.value)"></div></td>'+
+      '<td><input type="number" style="width:56px" value="'+r.adj+'" step="0.01" oninput="updL(\''+r.id+'\',\'adj\',this.value)"></td>'+
+      '<td><input type="checkbox" class="chk" '+(r.calc?"checked":"")+' onchange="updL(\''+r.id+'\',\'calc\',this.checked)"></td>'+
+      '<td><input type="number" style="width:110px" value="'+Math.round(r.price)+'" '+(r.calc?"readonly":"")+' oninput="updL(\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="checkbox" class="chk" '+(r.shokibo?"checked":"")+' onchange="updL(\''+r.id+'\',\'shokibo\',this.checked)"></td>'+
+      '<td><input type="text" style="width:120px" value="'+esc(r.note)+'" oninput="updL(\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delL(\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function renderBldgs(){
+  const tb=document.getElementById('bldgBody'); tb.innerHTML="";
+  bldgs.forEach(r=>{ if(r.calc) r.price=bldgPrice(r); const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="text" style="width:90px" value="'+esc(r.saimoku)+'" oninput="updB(\''+r.id+'\',\'saimoku\',this.value)"></td>'+
+      '<td><input type="text" style="width:90px" value="'+esc(r.use)+'" oninput="updB(\''+r.id+'\',\'use\',this.value)"></td>'+
+      '<td><input type="text" style="width:150px" value="'+esc(r.place)+'" oninput="updB(\''+r.id+'\',\'place\',this.value)"></td>'+
+      '<td><input type="number" style="width:74px" value="'+r.area+'" oninput="updB(\''+r.id+'\',\'area\',this.value)"></td>'+
+      '<td><input type="number" style="width:120px" value="'+r.koteih+'" oninput="updB(\''+r.id+'\',\'koteih\',this.value)"></td>'+
+      '<td><div class="frac"><input type="number" value="'+r.pn+'" oninput="updB(\''+r.id+'\',\'pn\',this.value)">/<input type="number" value="'+r.pd+'" oninput="updB(\''+r.id+'\',\'pd\',this.value)"></div></td>'+
+      '<td><input type="number" style="width:56px" value="'+r.adj+'" step="0.01" oninput="updB(\''+r.id+'\',\'adj\',this.value)"></td>'+
+      '<td><input type="checkbox" class="chk" '+(r.calc?"checked":"")+' onchange="updB(\''+r.id+'\',\'calc\',this.checked)"></td>'+
+      '<td><input type="number" style="width:110px" value="'+Math.round(r.price)+'" '+(r.calc?"readonly":"")+' oninput="updB(\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="text" style="width:120px" value="'+esc(r.note)+'" oninput="updB(\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delB(\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function addLand(){ lands.push(newLand()); renderLands(); calc(); }
+function addBldg(){ bldgs.push(newBldg()); renderBldgs(); calc(); }
+function delL(id){ lands=lands.filter(r=>r.id!==id); delete alloc[id]; renderLands(); calc(); }
+function delB(id){ bldgs=bldgs.filter(r=>r.id!==id); delete alloc[id]; renderBldgs(); calc(); }
+function updL(id,k,v){ const r=lands.find(x=>x.id===id); if(!r) return; if(['area','unit','koteih','bairitsu','pn','pd','adj','price'].includes(k)) r[k]=pf(v); else r[k]=v; if(k==='method'||k==='calc') renderLands(); if(k==='shokibo'){ renderLands(); renderShokibo(); } calc(); }
+function updB(id,k,v){ const r=bldgs.find(x=>x.id===id); if(!r) return; if(['area','koteih','pn','pd','adj','price'].includes(k)) r[k]=pf(v); else r[k]=v; if(k==='calc') renderBldgs(); calc(); }
+
+/* ===== 小規模宅地等の特例 ===== */
+const SHOKIBO_TYPES={
+  "特定居住用宅地等":{rate:0.8,limit:330,cat:"居住"},
+  "特定事業用宅地等":{rate:0.8,limit:400,cat:"事業"},
+  "特定同族会社事業用宅地等":{rate:0.8,limit:400,cat:"事業"},
+  "貸付事業用宅地等":{rate:0.5,limit:200,cat:"貸付"}
+};
+function computeShokibo(){
+  const items=lands.filter(l=>l.shokibo).map(l=>{ const t=SHOKIBO_TYPES[l.shokiboType]||SHOKIBO_TYPES["特定居住用宅地等"];
+    const evalYen=landPrice(l); const area=l.area||0; const unit=area>0?evalYen/area:0;
+    return {id:l.id,label:"土地："+(l.chimoku||"")+" "+(l.place||""),type:l.shokiboType,cat:t.cat,rate:t.rate,area,evalYen,unit,benefit:unit*t.rate}; });
+  const hasK=items.some(i=>i.cat==="貸付");
+  const sorted=items.slice().sort((a,b)=>b.benefit-a.benefit);
+  const applied={};
+  if(!hasK){ let rj=330,rg=400;
+    sorted.forEach(i=>{ let cap; if(i.cat==="居住"){cap=Math.min(i.area,Math.max(0,rj)); rj-=cap;} else {cap=Math.min(i.area,Math.max(0,rg)); rg-=cap;} applied[i.id]=cap; });
+  } else { let R=200;
+    sorted.forEach(i=>{ const w=i.cat==="居住"?(200/330):(i.cat==="事業"?(200/400):1); const maxA=w>0?Math.max(0,R)/w:0; const cap=Math.min(i.area,maxA); applied[i.id]=cap; R-=cap*w; });
+  }
+  const per={}; let total=0,uJ=0,uG=0,uK=0;
+  items.forEach(i=>{ const a=applied[i.id]||0; const red=Math.round(i.unit*a*i.rate); per[i.id]={applied:a,reduction:red}; total+=red;
+    if(i.cat==="居住")uJ+=a; else if(i.cat==="事業")uG+=a; else uK+=a; });
+  const adjusted=hasK?(uJ*(200/330)+uG*(200/400)+uK):null;
+  return {items,per,total,hasK,uJ,uG,uK,adjusted};
+}
+function updShokiboType(id,v){ const l=lands.find(x=>x.id===id); if(l){ l.shokiboType=v; renderShokibo(); calc(); } }
+function renderShokibo(){
+  const r=computeShokibo(); const tb=document.getElementById('shokiboBody'); if(!tb) return; tb.innerHTML="";
+  if(r.items.length===0){ tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--ink-soft);padding:16px">対象土地がありません。土地明細で「小規模宅地減額対象」にチェックしてください。</td></tr>'; }
+  r.items.forEach(i=>{ const p=r.per[i.id]||{applied:0,reduction:0}; const capped=p.applied < i.area-0.001;
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td style="text-align:left;max-width:200px;white-space:normal">'+esc(i.label)+'</td>'+
+      '<td><select style="width:200px" onchange="updShokiboType(\''+i.id+'\',this.value)">'+opts(Object.keys(SHOKIBO_TYPES),i.type)+'</select></td>'+
+      '<td>'+fmt(i.area)+'</td>'+
+      '<td>'+y(Math.round(i.unit))+'</td>'+
+      '<td>'+Math.round(i.rate*100)+'%</td>'+
+      '<td'+(capped?' style="color:var(--rose);font-weight:700"':'')+'>'+fmt(p.applied)+(capped?' <span class="sub">(限度)</span>':'')+'</td>'+
+      '<td class="tprice">'+y(p.reduction)+'</td>';
+    tb.appendChild(tr); });
+  setText('shokiboSum',y(r.total));
+  const sm=document.getElementById('shokiboSummary'); if(sm){
+    if(r.items.length===0){ sm.innerHTML='<b>限度面積判定：</b>対象土地がありません。土地明細で対象にチェックしてください。'; }
+    else{ let h='<b>限度面積の判定</b><br>';
+      h+='・特定居住用（限度330㎡）：適用 '+fmt(r.uJ)+' ㎡<br>';
+      h+='・特定事業用等（限度400㎡）：適用 '+fmt(r.uG)+' ㎡<br>';
+      if(r.hasK){ h+='・貸付事業用（限度200㎡）：適用 '+fmt(r.uK)+' ㎡<br>';
+        h+='・貸付併用のため200㎡換算：<b>'+fmt(r.adjusted)+' ㎡</b> / 200㎡（居住×200/330＋事業×200/400＋貸付）<br>'; }
+      else{ h+='<span class="sub">※貸付事業用がないため、居住用330㎡と事業用400㎡は完全併用（最大730㎡）できます。</span><br>'; }
+      h+='減額金額 合計：<b>'+y(r.total)+' 円（'+man(r.total)+' 万円）</b>　→ 小規模宅地減額へ自動反映';
+      sm.innerHTML=h; }
+  }
+}
+
+/* ===== 汎用明細 ===== */
+function addG(store){ STORE(store).push(NEW[store]()); RENDER[store](); calc(); }
+function delG(store,id){ const arr=STORE(store); const i=arr.findIndex(x=>x.id===id); if(i>=0) arr.splice(i,1); delete alloc[id]; RENDER[store](); calc(); }
+function updG(store,id,k,v){ const r=STORE(store).find(x=>x.id===id); if(!r) return; if(['price','qty','unit'].includes(k)) r[k]=pf(v); else r[k]=v; if(k==='calc') RENDER[store](); calc(); }
+
+function renderDeposits(){ const tb=document.getElementById('depBody'); tb.innerHTML="";
+  deposits.forEach(r=>{ const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="text" style="width:130px" value="'+esc(r.bank)+'" oninput="updG(\'deposits\',\''+r.id+'\',\'bank\',this.value)"></td>'+
+      '<td><input type="text" style="width:90px" value="'+esc(r.branch)+'" oninput="updG(\'deposits\',\''+r.id+'\',\'branch\',this.value)"></td>'+
+      '<td><select style="width:80px" onchange="updG(\'deposits\',\''+r.id+'\',\'type\',this.value)">'+opts(DEP_TYPES,r.type)+'</select></td>'+
+      '<td><input type="text" style="width:110px" value="'+esc(r.account)+'" oninput="updG(\'deposits\',\''+r.id+'\',\'account\',this.value)"></td>'+
+      '<td><input type="number" style="width:120px" value="'+r.price+'" oninput="updG(\'deposits\',\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="text" style="width:110px" value="'+esc(r.note)+'" oninput="updG(\'deposits\',\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delG(\'deposits\',\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function renderSecs(){ const tb=document.getElementById('secBody'); tb.innerHTML="";
+  secs.forEach(r=>{ if(r.calc) r.price=calcPrice(r); const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><select style="width:100px" onchange="updG(\'secs\',\''+r.id+'\',\'sectype\',this.value)">'+opts(SEC_TYPES,r.sectype)+'</select></td>'+
+      '<td><input type="text" style="width:130px" value="'+esc(r.name)+'" oninput="updG(\'secs\',\''+r.id+'\',\'name\',this.value)"></td>'+
+      '<td><input type="text" style="width:110px" value="'+esc(r.broker)+'" oninput="updG(\'secs\',\''+r.id+'\',\'broker\',this.value)"></td>'+
+      '<td><input type="number" style="width:70px" value="'+r.qty+'" oninput="updG(\'secs\',\''+r.id+'\',\'qty\',this.value)"></td>'+
+      '<td><input type="number" style="width:90px" value="'+r.unit+'" oninput="updG(\'secs\',\''+r.id+'\',\'unit\',this.value)"></td>'+
+      '<td><input type="checkbox" class="chk" '+(r.calc?"checked":"")+' onchange="updG(\'secs\',\''+r.id+'\',\'calc\',this.checked)"></td>'+
+      '<td><input type="number" style="width:120px" value="'+Math.round(r.price)+'" '+(r.calc?"readonly":"")+' oninput="updG(\'secs\',\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="text" style="width:110px" value="'+esc(r.note)+'" oninput="updG(\'secs\',\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delG(\'secs\',\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function renderOtherfin(){ const tb=document.getElementById('ofBody'); tb.innerHTML="";
+  otherfin.forEach(r=>{ const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="text" style="width:110px" value="'+esc(r.type)+'" oninput="updG(\'otherfin\',\''+r.id+'\',\'type\',this.value)"></td>'+
+      '<td><input type="text" style="width:200px" value="'+esc(r.detail)+'" oninput="updG(\'otherfin\',\''+r.id+'\',\'detail\',this.value)"></td>'+
+      '<td><input type="number" style="width:120px" value="'+r.price+'" oninput="updG(\'otherfin\',\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="text" style="width:120px" value="'+esc(r.note)+'" oninput="updG(\'otherfin\',\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delG(\'otherfin\',\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function renderLife(){ const tb=document.getElementById('lifeBody'); tb.innerHTML="";
+  life.forEach(r=>{ const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="text" style="width:130px" value="'+esc(r.insurer)+'" oninput="updG(\'life\',\''+r.id+'\',\'insurer\',this.value)"></td>'+
+      '<td><input type="text" style="width:180px" value="'+esc(r.detail)+'" oninput="updG(\'life\',\''+r.id+'\',\'detail\',this.value)"></td>'+
+      '<td><input type="number" style="width:120px" value="'+r.price+'" oninput="updG(\'life\',\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="text" style="width:120px" value="'+esc(r.note)+'" oninput="updG(\'life\',\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delG(\'life\',\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function renderRetire(){ const tb=document.getElementById('retBody'); tb.innerHTML="";
+  retire.forEach(r=>{ const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="text" style="width:130px" value="'+esc(r.payer)+'" oninput="updG(\'retire\',\''+r.id+'\',\'payer\',this.value)"></td>'+
+      '<td><input type="text" style="width:180px" value="'+esc(r.detail)+'" oninput="updG(\'retire\',\''+r.id+'\',\'detail\',this.value)"></td>'+
+      '<td><input type="number" style="width:120px" value="'+r.price+'" oninput="updG(\'retire\',\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="text" style="width:120px" value="'+esc(r.note)+'" oninput="updG(\'retire\',\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delG(\'retire\',\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function renderOtherAsset(){ const tb=document.getElementById('oaBody'); tb.innerHTML="";
+  jishaOther.forEach(r=>{ if(r.calc) r.price=calcPrice(r); const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><select style="width:130px" onchange="updG(\'otherAsset\',\''+r.id+'\',\'type\',this.value)">'+opts(OA_TYPES,r.type)+'</select></td>'+
+      '<td><input type="text" style="width:150px" value="'+esc(r.detail)+'" oninput="updG(\'otherAsset\',\''+r.id+'\',\'detail\',this.value)"></td>'+
+      '<td><input type="number" style="width:70px" value="'+r.qty+'" oninput="updG(\'otherAsset\',\''+r.id+'\',\'qty\',this.value)"></td>'+
+      '<td><input type="number" style="width:90px" value="'+r.unit+'" oninput="updG(\'otherAsset\',\''+r.id+'\',\'unit\',this.value)"></td>'+
+      '<td><input type="checkbox" class="chk" '+(r.calc?"checked":"")+' onchange="updG(\'otherAsset\',\''+r.id+'\',\'calc\',this.checked)"></td>'+
+      '<td><input type="number" style="width:120px" value="'+Math.round(r.price)+'" '+(r.calc?"readonly":"")+' oninput="updG(\'otherAsset\',\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="text" style="width:110px" value="'+esc(r.note)+'" oninput="updG(\'otherAsset\',\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delG(\'otherAsset\',\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function renderDebts(){ const tb=document.getElementById('debtBody'); tb.innerHTML="";
+  debts.forEach(r=>{ const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="text" style="width:110px" value="'+esc(r.type)+'" oninput="updG(\'debts\',\''+r.id+'\',\'type\',this.value)"></td>'+
+      '<td><input type="text" style="width:200px" value="'+esc(r.detail)+'" oninput="updG(\'debts\',\''+r.id+'\',\'detail\',this.value)"></td>'+
+      '<td><input type="number" style="width:120px" value="'+r.price+'" oninput="updG(\'debts\',\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="text" style="width:120px" value="'+esc(r.note)+'" oninput="updG(\'debts\',\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delG(\'debts\',\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+function renderFunerals(){ const tb=document.getElementById('funBody'); tb.innerHTML="";
+  funerals.forEach(r=>{ const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><input type="text" style="width:240px" value="'+esc(r.detail)+'" oninput="updG(\'funerals\',\''+r.id+'\',\'detail\',this.value)"></td>'+
+      '<td><input type="number" style="width:120px" value="'+r.price+'" oninput="updG(\'funerals\',\''+r.id+'\',\'price\',this.value)"></td>'+
+      '<td><input type="text" style="width:120px" value="'+esc(r.note)+'" oninput="updG(\'funerals\',\''+r.id+'\',\'note\',this.value)"></td>'+
+      '<td><button class="btn-x" onclick="delG(\'funerals\',\''+r.id+'\')">削除</button></td>';
+    tb.appendChild(tr); });
+}
+
+/* ===== 分割対象 ===== */
+function getAssets(){
+  const out=[];
+  lands.forEach(r=>out.push({id:r.id,price:landPrice(r),label:"土地："+(r.chimoku||"")+" "+(r.place||""),cat:"土地"}));
+  bldgs.forEach(r=>out.push({id:r.id,price:bldgPrice(r),label:"建物："+(r.saimoku||"")+" "+(r.place||""),cat:"建物"}));
+  deposits.forEach(r=>out.push({id:r.id,price:plain(r),label:"預貯金："+(r.bank||"")+" "+(r.branch||""),cat:"現金・預貯金"}));
+  secs.forEach(r=>out.push({id:r.id,price:calcPrice(r),label:"有価証券："+(r.sectype||"")+" "+(r.name||""),cat:"有価証券"}));
+  otherfin.forEach(r=>out.push({id:r.id,price:plain(r),label:"金融："+(r.type||"")+" "+(r.detail||""),cat:"その他"}));
+  life.forEach(r=>out.push({id:r.id,price:plain(r),label:"生命保険金："+(r.detail||r.insurer||""),cat:"生命保険金"}));
+  retire.forEach(r=>out.push({id:r.id,price:plain(r),label:"退職手当金："+(r.detail||r.payer||""),cat:"退職手当金"}));
+  jishaOther.forEach(r=>out.push({id:r.id,price:calcPrice(r),label:(r.type||"その他")+"："+(r.detail||""),cat:(r.type==="自社株式"?"自社株式":"その他")}));
+  return out;
+}
+function getDebts(){
+  const out=[];
+  debts.forEach(r=>out.push({id:r.id,price:plain(r),label:"負債："+(r.type||"")+" "+(r.detail||""),cat:"債務"}));
+  funerals.forEach(r=>out.push({id:r.id,price:plain(r),label:"葬式費用："+(r.detail||""),cat:"葬式費用"}));
+  return out;
+}
+
+/* ===== 分割グリッド ===== */
+function setAlloc(aid,hid,v){ if(!alloc[aid]) alloc[aid]={}; alloc[aid][hid]=pf(v); renderDivision(); calc(); }
+function allocOf(aid,hid){ return (alloc[aid]&&alloc[aid][hid])||0; }
+function rowAssigned(aid){ let s=0; heirs.forEach(h=>s+=allocOf(aid,h.id)); return s; }
+function autoAll(){
+  const auto=autoShares();
+  getAssets().forEach(a=>{ const p=a.price; alloc[a.id]={}; let acc=0,last=null;
+    heirs.forEach(h=>{ if(auto[h.id]>0){ const v=Math.round(p*auto[h.id]); alloc[a.id][h.id]=v; acc+=v; last=h.id; } });
+    if(last!==null) alloc[a.id][last]+=(p-acc);
+  });
+  renderDivision(); calc();
+}
+function clearAll(){ Object.keys(alloc).forEach(k=>delete alloc[k]); renderDivision(); calc(); }
+function divGroups(){
+  const G=[]; const add=(key,items)=>{ if(items.length) G.push({key,items}); };
+  add('土地', lands.map(r=>({id:r.id,price:landPrice(r),label:'【土地】'+(r.chimoku||'')+'　'+(r.place||'')+'　'+(r.use||'')+(r.area?'　'+r.area+'㎡':'')})));
+  add('建物', bldgs.map(r=>({id:r.id,price:bldgPrice(r),label:'【建物】'+(r.saimoku||'')+'　'+(r.place||'')+'　'+(r.use||'')})));
+  add('有価証券', secs.map(r=>({id:r.id,price:calcPrice(r),label:(r.sectype||'')+'　'+(r.name||'')+'　'+(r.broker||'')})));
+  add('自社株式', jishaOther.filter(r=>r.type==='自社株式').map(r=>({id:r.id,price:calcPrice(r),label:'【自社株式】'+(r.detail||'')})));
+  add('預貯金', deposits.map(r=>({id:r.id,price:plain(r),label:(r.bank||'')+'　'+(r.branch||'')+'　'+(r.type||'')+'　'+(r.account||'')})));
+  add('生命保険金', life.map(r=>({id:r.id,price:plain(r),label:(r.insurer||'')+'　'+(r.detail||'')})));
+  add('退職手当金', retire.map(r=>({id:r.id,price:plain(r),label:(r.payer||'')+'　'+(r.detail||'')})));
+  add('その他の金融資産', otherfin.map(r=>({id:r.id,price:plain(r),label:(r.type||'')+'　'+(r.detail||'')})));
+  add('その他資産', jishaOther.filter(r=>r.type!=='自社株式').map(r=>({id:r.id,price:calcPrice(r),label:(r.type||'')+'　'+(r.detail||'')})));
+  return G;
+}
+function divDebtGroups(){
+  const G=[];
+  if(debts.length) G.push({key:'負債',d:true,items:debts.map(r=>({id:r.id,price:plain(r),label:(r.type||'')+'　'+(r.detail||'')}))});
+  if(funerals.length) G.push({key:'葬式費用',d:true,items:funerals.map(r=>({id:r.id,price:plain(r),label:(r.detail||'')}))});
+  return G;
+}
+function renderDivision(){
+  renderPlanTabs();
+  const tbl=document.getElementById('divTable'); const groups=divGroups(), dgroups=divDebtGroups();
+  const ncol=heirs.length+3;
+  let html='<thead><tr><th style="text-align:left">資産／負債</th><th>価額(円)</th>';
+  heirs.forEach(h=>html+='<th>'+esc(h.name||'（未入力）')+'</th>');
+  html+='<th>残(未分割)</th></tr></thead><tbody>';
+  if(groups.length===0 && dgroups.length===0){ html+='<tr><td colspan="'+ncol+'" style="text-align:center;color:var(--ink-soft);padding:20px">明細タブで財産・負債を入力すると、ここに分割対象が表示されます。</td></tr>'; }
+  const renderGroup=(g)=>{
+    html+='<tr class="sect'+(g.d?' d':'')+'"><td colspan="'+ncol+'">■ '+g.key+'</td></tr>';
+    let gTot=0; const gSum={}; heirs.forEach(h=>gSum[h.id]=0);
+    g.items.forEach(a=>{ const rem=a.price-rowAssigned(a.id); gTot+=a.price; heirs.forEach(h=>gSum[h.id]+=allocOf(a.id,h.id));
+      html+='<tr><td class="lab">'+esc(a.label)+'</td><td class="price">'+y(a.price)+'</td>';
+      heirs.forEach(h=>{ html+='<td><input type="number" value="'+allocOf(a.id,h.id)+'" onchange="setAlloc(\''+a.id+'\',\''+h.id+'\',this.value)"></td>'; });
+      html+='<td class="rem '+(Math.abs(rem)<1?'ok':'bad')+'">'+y(rem)+'</td></tr>';
+    });
+    let gRem=gTot; heirs.forEach(h=>gRem-=gSum[h.id]);
+    html+='<tr class="subt"><td class="lab">小計（'+g.key+'）</td><td class="price">'+y(gTot)+'</td>'+heirs.map(h=>'<td style="text-align:right">'+y(gSum[h.id])+'</td>').join('')+'<td class="rem '+(Math.abs(gRem)<1?'ok':'bad')+'">'+y(gRem)+'</td></tr>';
+  };
+  groups.forEach(renderGroup);
+  dgroups.forEach(renderGroup);
+  html+='</tbody><tfoot><tr><td style="text-align:left">各人 取得(純額)</td><td></td>';
+  heirs.forEach(h=>html+='<td style="text-align:right">'+y(heirAmtYen(h.id))+'</td>');
+  html+='<td></td></tr></tfoot>';
+  tbl.innerHTML=html;
+  updateWarnings();
+}
+
+/* ===== メイン計算 ===== */
+function val(id){ const el=document.getElementById(id); return el?pfShare(el.value):0; }
+function sumCat(cat){ return getAssets().filter(a=>a.cat===cat).reduce((s,a)=>s+a.price,0); }
+function calc(){
+  const landYen=lands.reduce((a,r)=>a+landPrice(r),0);
+  const bldgYen=bldgs.reduce((a,r)=>a+bldgPrice(r),0);
+  const depYen=deposits.reduce((a,r)=>a+plain(r),0);
+  const secYen=secs.reduce((a,r)=>a+calcPrice(r),0);
+  const ofYen=otherfin.reduce((a,r)=>a+plain(r),0);
+  const lifeYen=life.reduce((a,r)=>a+plain(r),0);
+  const retYen=retire.reduce((a,r)=>a+plain(r),0);
+  const oaYen=jishaOther.reduce((a,r)=>a+calcPrice(r),0);
+  const debtYen=debts.reduce((a,r)=>a+plain(r),0);
+  const funYen=funerals.reduce((a,r)=>a+plain(r),0);
+  setText('landSum',y(landYen)); setText('landSumMan','（'+man(landYen)+' 万円）');
+  setText('bldgSum',y(bldgYen)); setText('bldgSumMan','（'+man(bldgYen)+' 万円）');
+  setText('depSum',y(depYen)); setText('depSumMan','（'+man(depYen)+' 万円）');
+  setText('secSum',y(secYen)); setText('secSumMan','（'+man(secYen)+' 万円）');
+  setText('ofSum',y(ofYen)); setText('ofSumMan','（'+man(ofYen)+' 万円）');
+  setText('lifeSum',y(lifeYen)); setText('lifeSumMan','（'+man(lifeYen)+' 万円）');
+  setText('retSum',y(retYen)); setText('retSumMan','（'+man(retYen)+' 万円）');
+  setText('oaSum',y(oaYen)); setText('oaSumMan','（'+man(oaYen)+' 万円）');
+  setText('debtSum',y(debtYen)); setText('debtSumMan','（'+man(debtYen)+' 万円）');
+  setText('funSum',y(funYen)); setText('funSumMan','（'+man(funYen)+' 万円）');
+
+  const toMan=x=>x/10000;
+  const T=computeTax();
+  const assetTotal=toMan(landYen+bldgYen+depYen+secYen+ofYen+lifeYen+retYen+oaYen);
+  const life_=toMan(lifeYen), retire_=toMan(retYen);
+  const nonTax=toMan(T.lifeNonTot+T.retNonTot);
+  const takuchi=toMan(T.shk.total);
+  const gift=toMan(T.giftTot);
+  const debt=toMan(debtYen), funeral=toMan(funYen);
+  const legalCount=T.legalCount;
+  const zaisan=toMan(T.zaisanTot);
+  const basic=toMan(T.basic);
+  const kakaku=toMan(T.sumK);
+  const isan=toMan(T.isan);
+  const totalTax=toMan(T.T1);
+  const payTotal=toMan(T.payTotal);
+  const dtEl=document.getElementById('d_takuchi'); if(dtEl) dtEl.value=Math.round(takuchi*100)/100;
+  const dgEl=document.getElementById('d_gift'); if(dgEl) dgEl.value=Math.round(gift*100)/100;
+  setText('r_total',fmt(zaisan)); setText('r_basic',fmt(basic)); setText('r_tax',fmt(payTotal)); setText('r_after',fmt(zaisan-payTotal));
+  const flow=document.getElementById('flow');
+  if(flow) flow.innerHTML=
+    '<div class="row"><span>資産総額</span><span class="v">'+fmt(assetTotal)+' 万円</span></div>'+
+    '<div class="row minus"><span>− 非課税金額(生保・退職)</span><span class="v">'+fmt(nonTax)+'</span></div>'+
+    '<div class="row minus"><span>− 小規模宅地等の減額</span><span class="v">'+fmt(takuchi)+'</span></div>'+
+    '<div class="row minus"><span>− 債務・葬式費用</span><span class="v">'+fmt(debt+funeral)+'</span></div>'+
+    '<div class="row plus"><span>＋ 生前贈与加算</span><span class="v">'+fmt(gift)+'</span></div>'+
+    '<div class="row total"><span>＝ 課税価格の合計</span><span class="v">'+fmt(kakaku)+' 万円</span></div>'+
+    '<div class="row minus"><span>− 基礎控除(3000+600×'+legalCount+'人)</span><span class="v">'+fmt(basic)+'</span></div>'+
+    '<div class="row total"><span>＝ 課税遺産総額</span><span class="v">'+fmt(isan)+' 万円</span></div>'+
+    '<div class="row total" style="color:var(--amber)"><span>相続税の総額</span><span class="v">'+fmt(totalTax)+' 万円</span></div>';
+  const items=[
+    {n:"土地",v:toMan(landYen),c:"#4a90c2"},{n:"建物",v:toMan(bldgYen),c:"#63a6d4"},
+    {n:"自社株式",v:toMan(sumCat("自社株式")),c:"#7cb8e0"},
+    {n:"有価証券",v:toMan(secYen),c:"#e9a23b"},{n:"現金・預貯金",v:toMan(depYen),c:"#efb45f"},
+    {n:"生命保険金",v:life_,c:"#f0c483"},{n:"退職手当金",v:retire_,c:"#f2d0a0"},
+    {n:"その他",v:toMan(ofYen+sumCat("その他")),c:"#f5dcbb"}
+  ].filter(i=>i.v>0);
+  const mx=Math.max(1,...items.map(i=>i.v));
+  const bars=document.getElementById('bars');
+  if(bars) bars.innerHTML=items.length?items.map(i=>
+    '<div class="bar-row"><span class="bl">'+i.n+'</span><div class="bar-track"><div class="bar-fill" style="width:'+(i.v/mx*100)+'%;background:'+i.c+'"></div></div>'+
+    '<span class="bv">'+fmt(i.v)+'万 ('+(assetTotal>0?Math.round(i.v/assetTotal*100):0)+'%)</span></div>').join('')
+    :'<p style="color:var(--ink-soft);font-size:13px">財産を入力すると構成が表示されます。</p>';
+  const rb=document.getElementById('resultBody'); if(rb){ rb.innerHTML="";
+    const zt=T.zaisanTot;
+    heirs.forEach(h=>{ const rel=RELATIONS[h.rel]; const amt=toMan(T.zaisanH[h.id]); const ratio=zt>0?T.zaisanH[h.id]/zt:0;
+      const taxBase=toMan(T.tt[h.id]+T.ni[h.id]); const reduce=toMan(T.ctrl[h.id]+bxv(h.id,'seisanded')); const pay=toMan(T.pay[h.id]); const after=toMan(T.zaisanH[h.id]+bxv(h.id,'adjust')-T.pay[h.id]);
+      const tr=document.createElement('tr');
+      tr.innerHTML='<td class="name">'+esc(h.name||'（未入力）')+'</td>'+
+        '<td>'+h.rel+(rel.wari?' <span class="tag wari">2割</span>':'')+'</td>'+
+        '<td>'+fmt(amt)+'</td><td>'+(ratio*100).toFixed(1)+'%</td>'+
+        '<td>'+fmt(taxBase)+'</td><td>'+(reduce>0.005?'-'+fmt(reduce):'－')+'</td>'+
+        '<td style="font-weight:700;color:#c8791d">'+fmt(pay)+'</td>'+
+        '<td style="color:var(--accent-d)">'+fmt(after)+'</td>';
+      rb.appendChild(tr); });
+    let afterTot=0; heirs.forEach(h=>afterTot+=T.zaisanH[h.id]+bxv(h.id,'adjust')-T.pay[h.id]);
+    const sr=document.createElement('tr'); sr.className="sum";
+    sr.innerHTML='<td class="name">合計</td><td>－</td><td>'+fmt(zaisan)+'</td><td>100%</td><td>'+fmt(totalTax)+'</td><td>－</td><td>'+fmt(payTotal)+'</td><td>'+fmt(toMan(afterTot))+'</td>';
+    rb.appendChild(sr);
+  }
+  const hb=document.getElementById('heirBody');
+  if(hb && hb.children.length===heirs.length){ heirs.forEach((h,i)=>{ const cell=hb.children[i].children[4]; if(cell) cell.innerHTML=fmt(toMan(T.zaisanH[h.id]))+' <span class="sub">万</span>'; }); }
+  renderShokibo(); saveLocal(); if(document.getElementById('sec2Result')) renderSecond(); updateWarnings();
+}
+
+/* ===== 分割案 帳票 ===== */
+let bx={};
+
+/* ===== 複数分割案（案ごとに alloc と bx を保持。財産・相続人は共通） ===== */
+let divPlans=[], activePlanIdx=0;
+function ensurePlans(){ if(!divPlans||divPlans.length===0){ divPlans=[{id:uid(),name:'案1',alloc:alloc,bx:bx}]; activePlanIdx=0; } if(activePlanIdx>=divPlans.length) activePlanIdx=0; }
+function setActivePlanRefs(){ ensurePlans(); const p=divPlans[activePlanIdx]; alloc=p.alloc||(p.alloc={}); bx=p.bx||(p.bx={}); }
+function syncActivePlan(){ ensurePlans(); divPlans[activePlanIdx].alloc=alloc; divPlans[activePlanIdx].bx=bx; }
+function switchPlan(idx){
+  ensurePlans(); if(idx<0||idx>=divPlans.length) return;
+  syncActivePlan(); activePlanIdx=idx; setActivePlanRefs();
+  renderPlanTabs(); renderHeirs(); renderDivision(); renderAddon(); calc();
+  if(isActive('p_report')) renderBunkatsu();
+  if(isActive('p_second')) renderSecond();
+  if(isActive('p_compare')) renderCompare();
+  if(isActive('p_taisaku')) renderTaisaku();
+  saveLocal();
+}
+function addPlan(){ ensurePlans(); const nm=prompt('新しい分割案の名前（現在の案の内容を引き継いで作成します）','案'+(divPlans.length+1)); if(!nm) return;
+  syncActivePlan();
+  divPlans.push({id:uid(),name:nm,alloc:JSON.parse(JSON.stringify(alloc)),bx:JSON.parse(JSON.stringify(bx))});
+  switchPlan(divPlans.length-1); }
+function renamePlan(idx){ ensurePlans(); if(!divPlans[idx]) return; const nm=prompt('案の名前を変更',divPlans[idx].name); if(!nm) return; divPlans[idx].name=nm; renderPlanTabs(); saveLocal(); }
+function delPlan(idx){ ensurePlans(); if(divPlans.length<=1){ alert('案は最低1つ必要です。'); return; } if(!confirm('「'+divPlans[idx].name+'」を削除しますか？')) return;
+  divPlans.splice(idx,1); if(activePlanIdx>=divPlans.length) activePlanIdx=divPlans.length-1; setActivePlanRefs();
+  renderPlanTabs(); renderHeirs(); renderDivision(); renderAddon(); calc(); saveLocal(); }
+function renderPlanTabs(){ const el=document.getElementById('planTabs'); if(!el) return; ensurePlans();
+  el.innerHTML=divPlans.map((p,i)=>{ const act=i===activePlanIdx;
+    return '<span style="display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:5px 8px 5px 13px;font-size:13px;font-weight:600;cursor:pointer;'+(act?'background:var(--accent);color:#fff':'background:#fff;color:var(--ink);border:1px solid var(--line)')+'" onclick="switchPlan('+i+')">'+
+      '<span>'+esc(p.name)+'</span>'+
+      '<a href="javascript:void(0)" title="名称変更" onclick="event.stopPropagation();renamePlan('+i+')" style="color:'+(act?'#eaf6f0':'var(--ink-soft)')+';text-decoration:none">✎</a>'+
+      (divPlans.length>1?'<a href="javascript:void(0)" title="削除" onclick="event.stopPropagation();delPlan('+i+')" style="color:'+(act?'#ffe1dc':'var(--rose)')+';text-decoration:none;font-size:14px">×</a>':'')+
+    '</span>'; }).join('')+
+    '<button class="btn btn-add btn-sm" style="border-radius:20px" onclick="addPlan()">＋ 案を追加</button>';
+}
+function bxv(h,k){ return (bx[h]&&bx[h][k])||0; }
+function setBx(h,k,v){ if(!bx[h])bx[h]={}; bx[h][k]=pf(v); renderBunkatsu(); calc(); renderAddon(); }
+function f1000(x){ return Math.floor(x/1000)*1000; }
+function f100(x){ return Math.floor(x/100)*100; }
+const TAXY=[[10000000,.10,0],[30000000,.15,500000],[50000000,.20,2000000],[100000000,.30,7000000],[200000000,.40,17000000],[300000000,.45,27000000],[600000000,.50,42000000],[Infinity,.55,72000000]];
+function taxY(x){ if(x<=0) return 0; for(const b of TAXY){ if(x<=b[0]) return x*b[1]-b[2]; } return 0; }
+function ymoney(n){ n=Math.round(n); return (n<0?'-':'')+Math.abs(n).toLocaleString('ja-JP'); }
+function allocSumBy(items){ const o={}; heirs.forEach(h=>o[h.id]=0); items.forEach(it=>heirs.forEach(h=>o[h.id]+=effAllocOf(it.id,it.price,h.id))); return o; }
+function inputCell(h,k){ return '<td><input type="number" value="'+bxv(h.id,k)+'" onchange="setBx(\''+h.id+'\',\''+k+'\',this.value)"></td>'; }
+/* ===== 税計算 共通エンジン（円ベース・課税価格按分） ===== */
+function computeTax(){
+  const auto=autoShares();
+  const legalCount=heirs.filter(h=>RELATIONS[h.rel].heir).length;
+  const shk=computeShokibo();
+  const secDefs=[
+    {key:'土地',shokibo:true,items:lands.map(r=>({id:r.id,price:landPrice(r),detail:'【土地】'+(r.chimoku||'')+'　'+(r.place||'')+'　'+(r.use||'')+(r.area?'　'+r.area+'㎡':'')}))},
+    {key:'建物',items:bldgs.map(r=>({id:r.id,price:bldgPrice(r),detail:'【建物】'+(r.saimoku||'')+'　'+(r.place||'')+'　'+(r.use||'')}))},
+    {key:'有価証券',items:secs.map(r=>({id:r.id,price:calcPrice(r),detail:(r.sectype||'')+'　'+(r.name||'')+'　'+(r.broker||'')}))},
+    {key:'自社株式',items:jishaOther.filter(r=>r.type==='自社株式').map(r=>({id:r.id,price:calcPrice(r),detail:'【自社株式】'+(r.detail||'')}))},
+    {key:'預貯金',items:deposits.map(r=>({id:r.id,price:plain(r),detail:(r.bank||'')+'　'+(r.branch||'')+'　'+(r.type||'')+'　'+(r.account||'')}))},
+    {key:'生命保険金',nonx:'life',items:life.map(r=>({id:r.id,price:plain(r),detail:(r.insurer||'')+'　'+(r.detail||'')}))},
+    {key:'退職手当金',nonx:'ret',items:retire.map(r=>({id:r.id,price:plain(r),detail:(r.payer||'')+'　'+(r.detail||'')}))},
+    {key:'その他',items:otherfin.map(r=>({id:r.id,price:plain(r),detail:(r.type||'')+'　'+(r.detail||'')})).concat(jishaOther.filter(r=>r.type!=='自社株式').map(r=>({id:r.id,price:calcPrice(r),detail:(r.type||'')+'　'+(r.detail||'')})))}
+  ];
+  const shokiboH={}; heirs.forEach(h=>shokiboH[h.id]=0);
+  shk.items.forEach(i=>{ const l=lands.find(x=>x.id===i.id); const lp=l?landPrice(l):0; const red=shk.per[i.id]?shk.per[i.id].reduction:0; if(lp>0) heirs.forEach(h=>shokiboH[h.id]+=red*(effAllocOf(i.id,lp,h.id)/lp)); });
+  const lifeH={},retH={}; heirs.forEach(h=>{lifeH[h.id]=0;retH[h.id]=0;});
+  life.forEach(r=>heirs.forEach(h=>lifeH[h.id]+=effAllocOf(r.id,plain(r),h.id)));
+  retire.forEach(r=>heirs.forEach(h=>retH[h.id]+=effAllocOf(r.id,plain(r),h.id)));
+  const lifeTot=Object.values(lifeH).reduce((a,b)=>a+b,0), retTot=Object.values(retH).reduce((a,b)=>a+b,0);
+  const lifeNonTot=Math.min(lifeTot,5000000*legalCount), retNonTot=Math.min(retTot,5000000*legalCount);
+  const lifeNonH={},retNonH={}; heirs.forEach(h=>{lifeNonH[h.id]=lifeTot>0?lifeNonTot*lifeH[h.id]/lifeTot:0; retNonH[h.id]=retTot>0?retNonTot*retH[h.id]/retTot:0;});
+  const shuH={}; heirs.forEach(h=>shuH[h.id]=0);
+  secDefs.forEach(sec=>sec.items.forEach(it=>heirs.forEach(h=>shuH[h.id]+=effAllocOf(it.id,it.price,h.id))));
+  heirs.forEach(h=>{ shuH[h.id]-=shokiboH[h.id]+lifeNonH[h.id]+retNonH[h.id]; shuH[h.id]+=bxv(h.id,'daisho'); });
+  const shuTot=Object.values(shuH).reduce((a,b)=>a+b,0);
+  const debtItems=getDebts(); const debtH={}; heirs.forEach(h=>debtH[h.id]=0);
+  debtItems.forEach(it=>heirs.forEach(h=>debtH[h.id]+=effAllocOf(it.id,it.price,h.id)));
+  const debtTot=debtItems.reduce((a,i)=>a+i.price,0);
+  const giftH={}; heirs.forEach(h=>giftH[h.id]=bxv(h.id,'gseisan')+bxv(h.id,'greki')); const giftTot=Object.values(giftH).reduce((a,b)=>a+b,0);
+  const kk={}; let sumK=0; heirs.forEach(h=>{ kk[h.id]=Math.max(0, f1000(shuH[h.id]-debtH[h.id]+giftH[h.id])); sumK+=kk[h.id]; });
+  const basic=(3000+600*legalCount)*10000; const isan=Math.max(0,sumK-basic);
+  let T1=0; heirs.filter(h=>RELATIONS[h.rel].heir).forEach(h=>T1+=taxY(f1000(isan*auto[h.id]))); T1=f100(T1);
+  const effRate=sumK>0?T1/sumK*100:0;
+  const tt={}; let fs=0; heirs.forEach(h=>{tt[h.id]=Math.floor(sumK>0?T1*kk[h.id]/sumK:0); fs+=tt[h.id];});
+  let rem=Math.round(T1-fs); const ord=heirs.slice().sort((a,b)=>kk[b.id]-kk[a.id]); for(let i=0;i<ord.length&&rem>0;i++){tt[ord[i].id]++;rem--;}
+  const ni={}; heirs.forEach(h=>ni[h.id]=RELATIONS[h.rel].wari?Math.floor(tt[h.id]*0.2):0);
+  const spouse=heirs.find(h=>RELATIONS[h.rel].spouse); const spLegal=spouse?auto[spouse.id]:0; const haigu={}; heirs.forEach(h=>haigu[h.id]=0);
+  if(spouse){ const guard=Math.max(sumK*spLegal,160000000); const red=sumK>0?T1*Math.min(kk[spouse.id],guard)/sumK:0; haigu[spouse.id]=Math.min(tt[spouse.id]+ni[spouse.id],Math.floor(red)); }
+  const ctrl={}; heirs.forEach(h=>ctrl[h.id]=bxv(h.id,'dgift')+haigu[h.id]+bxv(h.id,'dminor')+bxv(h.id,'ddis')+bxv(h.id,'dsouji')+bxv(h.id,'dforeign'));
+  const pay={}; heirs.forEach(h=>pay[h.id]=f100(Math.max(0,tt[h.id]+ni[h.id]-ctrl[h.id]-bxv(h.id,'seisanded')))); const payTotal=Object.values(pay).reduce((a,b)=>a+b,0);
+  const zaisanH={}; heirs.forEach(h=>zaisanH[h.id]=0);
+  secDefs.forEach(sec=>sec.items.forEach(it=>heirs.forEach(h=>zaisanH[h.id]+=effAllocOf(it.id,it.price,h.id))));
+  heirs.forEach(h=>zaisanH[h.id]-=debtH[h.id]); const zaisanTot=Object.values(zaisanH).reduce((a,b)=>a+b,0);
+  return {auto,legalCount,secDefs,shk,shokiboH,lifeNonH,retNonH,lifeNonTot,retNonTot,shuH,shuTot,debtItems,debtH,debtTot,giftH,giftTot,kk,sumK,basic,isan,T1,effRate,tt,ni,haigu,ctrl,pay,payTotal,zaisanH,zaisanTot,spouse};
+}
+
+function renderBunkatsu(){
+  const tbl=document.getElementById('reportTable'); if(!tbl) return;
+  const T=computeTax(); const cols=heirs.length+2; const auto=T.auto;
+  let html='<thead><tr><th colspan="'+cols+'" style="text-align:left;font-size:14px;background:#eef6f0;color:var(--accent-d);padding:8px">財産分割案 ＆ 相続税概算　　被相続人：'+esc((document.getElementById('deceased')||{}).value||'')+' 様　　基準日：'+esc((document.getElementById('baseDate')||{}).value||'')+'　　単位：円</th></tr><tr><th style="text-align:left">区分・明細</th><th>計</th>'+heirs.map(h=>'<th>'+esc(h.name||'（未入力）')+'</th>').join('')+'</tr></thead><tbody>';
+  T.secDefs.forEach(sec=>{
+    html+='<tr class="sec"><td class="lab" colspan="'+cols+'">'+sec.key+'</td></tr>';
+    if(sec.items.length===0){ html+='<tr><td class="lab" style="color:var(--ink-soft)">（明細なし）</td><td></td>'+heirs.map(()=>'<td></td>').join('')+'</tr>'; }
+    sec.items.forEach(it=>{ html+='<tr><td class="lab">'+esc(it.detail)+'</td><td>'+ymoney(it.price)+'</td>'+heirs.map(h=>'<td>'+ymoney(effAllocOf(it.id,it.price,h.id))+'</td>').join('')+'</tr>'; });
+    const st={}; heirs.forEach(h=>st[h.id]=0); sec.items.forEach(it=>heirs.forEach(h=>st[h.id]+=effAllocOf(it.id,it.price,h.id))); const stTot=sec.items.reduce((a,i)=>a+i.price,0);
+    html+='<tr class="sub"><td class="lab">小計</td><td>'+ymoney(stTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(st[h.id])+'</td>').join('')+'</tr>';
+    const net={}; heirs.forEach(h=>net[h.id]=st[h.id]); let netTot=stTot;
+    if(sec.shokibo){ const rt=Object.values(T.shokiboH).reduce((a,b)=>a+b,0);
+      html+='<tr><td class="lab">小計（小規模宅地等の減額）</td><td class="neg">'+ymoney(-rt)+'</td>'+heirs.map(h=>'<td class="neg">'+ymoney(-T.shokiboH[h.id])+'</td>').join('')+'</tr>';
+      heirs.forEach(h=>net[h.id]-=T.shokiboH[h.id]); netTot-=rt;
+      html+='<tr class="sub"><td class="lab">差引 ★</td><td>'+ymoney(netTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(net[h.id])+'</td>').join('')+'</tr>'; }
+    if(sec.nonx==='life'){ html+='<tr><td class="lab">非課税金額</td><td class="neg">'+ymoney(-T.lifeNonTot)+'</td>'+heirs.map(h=>'<td class="neg">'+ymoney(-T.lifeNonH[h.id])+'</td>').join('')+'</tr>';
+      heirs.forEach(h=>net[h.id]-=T.lifeNonH[h.id]); netTot-=T.lifeNonTot;
+      html+='<tr class="sub"><td class="lab">差引 ★</td><td>'+ymoney(netTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(net[h.id])+'</td>').join('')+'</tr>'; }
+    if(sec.nonx==='ret'){ html+='<tr><td class="lab">非課税金額</td><td class="neg">'+ymoney(-T.retNonTot)+'</td>'+heirs.map(h=>'<td class="neg">'+ymoney(-T.retNonH[h.id])+'</td>').join('')+'</tr>';
+      heirs.forEach(h=>net[h.id]-=T.retNonH[h.id]); netTot-=T.retNonTot;
+      html+='<tr class="sub"><td class="lab">差引 ★</td><td>'+ymoney(netTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(net[h.id])+'</td>').join('')+'</tr>'; }
+  });
+  html+='<tr><td class="lab">代償分割 ★</td><td>'+ymoney(heirs.reduce((a,h)=>a+bxv(h.id,'daisho'),0))+'</td>'+heirs.map(h=>inputCell(h,'daisho')).join('')+'</tr>';
+  html+='<tr class="big"><td class="lab">取得財産の価額（＝★の合計）</td><td>'+ymoney(T.shuTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(T.shuH[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr class="sec"><td class="lab" colspan="'+cols+'">債務・葬式費用</td></tr>';
+  if(T.debtItems.length===0){ html+='<tr><td class="lab" style="color:var(--ink-soft)">（明細なし）</td><td></td>'+heirs.map(()=>'<td></td>').join('')+'</tr>'; }
+  T.debtItems.forEach(it=>{ html+='<tr><td class="lab">'+esc(it.label)+'</td><td class="neg">'+ymoney(it.price)+'</td>'+heirs.map(h=>'<td>'+ymoney(effAllocOf(it.id,it.price,h.id))+'</td>').join('')+'</tr>'; });
+  html+='<tr class="sub"><td class="lab">債務・葬式費用の合計</td><td class="neg">'+ymoney(T.debtTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(T.debtH[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr class="sec"><td class="lab" colspan="'+cols+'">生前贈与加算</td></tr>';
+  html+='<tr><td class="lab">相続時精算課税制度</td><td>'+ymoney(heirs.reduce((a,h)=>a+bxv(h.id,'gseisan'),0))+'</td>'+heirs.map(h=>inputCell(h,'gseisan')).join('')+'</tr>';
+  html+='<tr><td class="lab">暦年課税</td><td>'+ymoney(heirs.reduce((a,h)=>a+bxv(h.id,'greki'),0))+'</td>'+heirs.map(h=>inputCell(h,'greki')).join('')+'</tr>';
+  html+='<tr class="sub"><td class="lab">生前贈与加算額</td><td>'+ymoney(T.giftTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(T.giftH[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr class="big"><td class="lab">課税価格（＝取得財産－債務葬式＋生前贈与加算）</td><td>'+ymoney(T.sumK)+'</td>'+heirs.map(h=>'<td>'+ymoney(T.kk[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr><td class="lab">基礎控除額</td><td class="neg">'+ymoney(-T.basic)+'</td>'+heirs.map(()=>'<td>-</td>').join('')+'</tr>';
+  html+='<tr class="sub"><td class="lab">相続税の総額（実効税率：'+T.effRate.toFixed(2)+'%）</td><td>'+ymoney(T.T1)+'</td>'+heirs.map(h=>'<td>'+ymoney(T.tt[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr><td class="lab">２割加算</td><td>'+ymoney(Object.values(T.ni).reduce((a,b)=>a+b,0))+'</td>'+heirs.map(h=>'<td>'+ymoney(T.ni[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr class="sec"><td class="lab" colspan="'+cols+'">税額控除</td></tr>';
+  html+='<tr><td class="lab">暦年課税の贈与税額控除</td><td>'+ymoney(heirs.reduce((a,h)=>a+bxv(h.id,'dgift'),0))+'</td>'+heirs.map(h=>inputCell(h,'dgift')).join('')+'</tr>';
+  html+='<tr><td class="lab">配偶者の税額軽減</td><td class="neg">'+ymoney(-Object.values(T.haigu).reduce((a,b)=>a+b,0))+'</td>'+heirs.map(h=>'<td class="neg">'+(T.haigu[h.id]?ymoney(-T.haigu[h.id]):'0')+'</td>').join('')+'</tr>';
+  [['dminor','未成年者控除'],['ddis','障害者控除'],['dsouji','相次相続控除'],['dforeign','外国税額控除']].forEach(p=>{ html+='<tr><td class="lab">'+p[1]+'</td><td>'+ymoney(heirs.reduce((a,h)=>a+bxv(h.id,p[0]),0))+'</td>'+heirs.map(h=>inputCell(h,p[0])).join('')+'</tr>'; });
+  html+='<tr class="sub"><td class="lab">税額控除 小計</td><td>'+ymoney(Object.values(T.ctrl).reduce((a,b)=>a+b,0))+'</td>'+heirs.map(h=>'<td>'+ymoney(T.ctrl[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr><td class="lab">相続時精算課税分の贈与税額控除</td><td>'+ymoney(heirs.reduce((a,h)=>a+bxv(h.id,'seisanded'),0))+'</td>'+heirs.map(h=>inputCell(h,'seisanded')).join('')+'</tr>';
+  html+='<tr class="big"><td class="lab">納付すべき相続税額</td><td>'+ymoney(T.payTotal)+'</td>'+heirs.map(h=>'<td>'+ymoney(T.pay[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr class="sec"><td class="lab" colspan="'+cols+'">参考</td></tr>';
+  html+='<tr class="ref"><td class="lab">法定相続分</td><td>-</td>'+heirs.map(h=>'<td>'+(RELATIONS[h.rel].heir?shareLabel(auto[h.id])+'（'+(auto[h.id]*100).toFixed(1)+'%）':'－')+'</td>').join('')+'</tr>';
+  const zaisanTot=T.zaisanTot;
+  html+='<tr class="ref"><td class="lab">財産総額（＝資産総額－債務・葬式）</td><td>'+ymoney(zaisanTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(T.zaisanH[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr class="ref"><td class="lab">割合</td><td>100%</td>'+heirs.map(h=>'<td>'+(zaisanTot>0?(T.zaisanH[h.id]/zaisanTot*100).toFixed(1):'0.0')+'%</td>').join('')+'</tr>';
+  html+='<tr class="ref"><td class="lab">調整</td><td>'+ymoney(heirs.reduce((a,h)=>a+bxv(h.id,'adjust'),0))+'</td>'+heirs.map(h=>inputCell(h,'adjust')).join('')+'</tr>';
+  const adjH={}; heirs.forEach(h=>adjH[h.id]=T.zaisanH[h.id]+bxv(h.id,'adjust')); const adjTot=Object.values(adjH).reduce((a,b)=>a+b,0);
+  html+='<tr class="ref"><td class="lab">調整後（＝財産総額＋調整）</td><td>'+ymoney(adjTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(adjH[h.id])+'</td>').join('')+'</tr>';
+  const afterH={}; heirs.forEach(h=>afterH[h.id]=adjH[h.id]-T.pay[h.id]); const afterTot=Object.values(afterH).reduce((a,b)=>a+b,0);
+  html+='<tr class="ref"><td class="lab">税引後（＝調整後－納付税額）</td><td>'+ymoney(afterTot)+'</td>'+heirs.map(h=>'<td>'+ymoney(afterH[h.id])+'</td>').join('')+'</tr>';
+  html+='<tr class="ref"><td class="lab">割合</td><td>100%</td>'+heirs.map(h=>'<td>'+(afterTot>0?(afterH[h.id]/afterTot*100).toFixed(1):'0.0')+'%</td>').join('')+'</tr>';
+  html+='</tbody>'; tbl.innerHTML=html;
+  markReportZeros(tbl);
+}
+/* 印刷時に0を消すためのクラス付け（画面表示は不変。@media print でのみ非表示化） */
+function markReportZeros(tbl){
+  const isZero=t=>{ t=(t||'').trim(); return t==='0'||t==='0円'||t==='±0'||t==='-0'; };
+  // 0の数値セルに z0
+  tbl.querySelectorAll('td').forEach(td=>{ if(!td.classList.contains('lab') && isZero(td.textContent)) td.classList.add('z0'); });
+  // 明細・控除行などで、ラベル以外がすべて0/空/－なら zrow（見出し行 sec は対象外）
+  tbl.querySelectorAll('tbody tr').forEach(tr=>{
+    if(tr.classList.contains('sec')) return;
+    const tds=[...tr.children]; if(tds.length<2) return;
+    const data=tds.slice(1);
+    const allZero=data.every(td=>{ const t=(td.textContent||'').trim(); return t===''||t==='-'||t==='－'||isZero(t); });
+    if(allZero) tr.classList.add('zrow');
+  });
+  // 見出し行：次の見出しまでの行がすべて zrow なら、その見出しも印刷時に隠す（孤立見出し防止）
+  const rows=[...tbl.querySelectorAll('tbody tr')];
+  rows.forEach((tr,i)=>{ if(!tr.classList.contains('sec')) return;
+    let allHidden=true, any=false;
+    for(let j=i+1;j<rows.length;j++){ if(rows[j].classList.contains('sec')) break; any=true; if(!rows[j].classList.contains('zrow')){ allHidden=false; break; } }
+    if(any&&allHidden) tr.classList.add('zrow');
+  });
+}
+
+function addonInput(h,k){ return '<input type="number" style="width:120px" value="'+bxv(h.id,k)+'" onchange="setBx(\''+h.id+'\',\''+k+'\',this.value)">'; }
+function renderAddon(){
+  if(!document.getElementById('addonGift')) return;
+  let g='<thead><tr><th style="text-align:left">相続人</th><th>暦年課税(円)</th><th>相続時精算課税(円)</th><th>計(円)</th></tr></thead><tbody>';
+  heirs.forEach(h=>{ const t=bxv(h.id,'greki')+bxv(h.id,'gseisan'); g+='<tr><td style="text-align:left">'+esc(h.name||'（未入力）')+'</td><td>'+addonInput(h,'greki')+'</td><td>'+addonInput(h,'gseisan')+'</td><td class="tprice">'+ymoney(t)+'</td></tr>'; });
+  g+='</tbody>'; document.getElementById('addonGift').innerHTML=g;
+  let d='<thead><tr><th style="text-align:left">相続人</th><th>暦年贈与<br>税額控除</th><th>未成年者<br>控除</th><th>障害者<br>控除</th><th>相次相続<br>控除</th><th>外国税額<br>控除</th><th>精算課税分<br>贈与税額控除</th></tr></thead><tbody>';
+  heirs.forEach(h=>{ d+='<tr><td style="text-align:left">'+esc(h.name||'（未入力）')+'</td><td>'+addonInput(h,'dgift')+'</td><td>'+addonInput(h,'dminor')+'</td><td>'+addonInput(h,'ddis')+'</td><td>'+addonInput(h,'dsouji')+'</td><td>'+addonInput(h,'dforeign')+'</td><td>'+addonInput(h,'seisanded')+'</td></tr>'; });
+  d+='</tbody>'; document.getElementById('addonDed').innerHTML=d;
+  let s='<thead><tr><th style="text-align:left">相続人</th><th>代償分割(円)</th><th>調整(円)</th></tr></thead><tbody>';
+  heirs.forEach(h=>{ s+='<tr><td style="text-align:left">'+esc(h.name||'（未入力）')+'</td><td>'+addonInput(h,'daisho')+'</td><td>'+addonInput(h,'adjust')+'</td></tr>'; });
+  s+='</tbody>'; document.getElementById('addonDaisho').innerHTML=s;
+}
+
+document.addEventListener('input',e=>{ if(e.target.matches('#d_takuchi, #d_gift')) calc(); });
+document.addEventListener('input',e=>{ if(e.target.matches('#sec2_own,#sec2_debt,#sec2_gift,#sec2_adopt')) renderSecond(); });
+/* ===== 財産目録（相続財産リスト） ===== */
+function renderList(){
+  const tbl=document.getElementById('listTable'); if(!tbl) return;
+  const legalCount=heirs.filter(h=>RELATIONS[h.rel]&&RELATIONS[h.rel].heir).length;
+  const q=(r)=>r.calc?r.qty:''; const u=(r)=>r.calc?r.unit:'';
+  const groups=[
+    {key:'土地',rows:lands.map(r=>({kind:r.chimoku||'土地',detail:(r.place||'')+'　'+(r.use||'')+(r.area?'　'+r.area+'㎡':''),qty:'',unit:'',price:landPrice(r),note:r.note}))},
+    {key:'建物',rows:bldgs.map(r=>({kind:r.saimoku||'建物',detail:(r.place||'')+'　'+(r.use||'')+(r.area?'　'+r.area+'㎡':''),qty:'',unit:'',price:bldgPrice(r),note:r.note}))},
+    {key:'有価証券',rows:secs.map(r=>({kind:r.sectype||'有価証券',detail:(r.name||'')+'　'+(r.broker||''),qty:q(r),unit:u(r),price:calcPrice(r),note:r.note}))},
+    {key:'自社株式',rows:jishaOther.filter(r=>r.type==='自社株式').map(r=>({kind:'自社株式',detail:r.detail||'',qty:q(r),unit:u(r),price:calcPrice(r),note:r.note}))},
+    {key:'預貯金',rows:deposits.map(r=>({kind:r.type||'預貯金',detail:(r.bank||'')+'　'+(r.branch||'')+'　'+(r.account||''),qty:'',unit:'',price:plain(r),note:r.note}))},
+    {key:'生命保険金',rows:life.map(r=>({kind:'生命保険金',detail:(r.insurer||'')+'　'+(r.detail||''),qty:'',unit:'',price:plain(r),note:r.note}))},
+    {key:'退職手当金',rows:retire.map(r=>({kind:'退職手当金',detail:(r.payer||'')+'　'+(r.detail||''),qty:'',unit:'',price:plain(r),note:r.note}))},
+    {key:'その他の金融資産',rows:otherfin.map(r=>({kind:r.type||'その他',detail:r.detail||'',qty:'',unit:'',price:plain(r),note:r.note}))},
+    {key:'その他の財産',rows:jishaOther.filter(r=>r.type!=='自社株式').map(r=>({kind:r.type||'その他',detail:r.detail||'',qty:q(r),unit:u(r),price:calcPrice(r),note:r.note}))}
+  ];
+  const dgroups=[
+    {key:'債務',rows:debts.map(r=>({kind:r.type||'債務',detail:r.detail||'',price:plain(r),note:r.note}))},
+    {key:'葬式費用',rows:funerals.map(r=>({kind:'葬式費用',detail:r.detail||'',price:plain(r),note:r.note}))}
+  ];
+  const C=6; let no=0;
+  let h='<thead><tr><th colspan="'+C+'" style="text-align:left;font-size:14px;background:#eef6f0;color:var(--accent-d);padding:8px">財産目録　　被相続人：'+esc((document.getElementById('deceased')||{}).value||'')+' 様　　基準日：'+esc((document.getElementById('baseDate')||{}).value||'')+'　　単位：円</th></tr>'+
+    '<tr><th>No.</th><th style="text-align:left">種類</th><th style="text-align:left">明細（所在・銘柄・金融機関等）</th><th>数量</th><th>単価</th><th>相続税評価額</th></tr></thead><tbody>';
+  let aTot=0, any=false; const sums=[];
+  groups.forEach(g=>{ if(!g.rows.length) return; any=true; let s=0;
+    h+='<tr class="sec"><td class="lab" colspan="'+C+'">'+g.key+'</td></tr>';
+    g.rows.forEach(r=>{ no++; s+=r.price;
+      h+='<tr><td style="text-align:center">'+no+'</td><td class="lab">'+esc(r.kind)+'</td><td class="lab">'+esc(r.detail)+(r.note?'<br><span class="sub">'+esc(r.note)+'</span>':'')+'</td><td>'+(r.qty?y(r.qty):'')+'</td><td>'+(r.unit?y(r.unit):'')+'</td><td>'+y(r.price)+'</td></tr>'; });
+    aTot+=s; sums.push([g.key,s]);
+    h+='<tr class="sub"><td></td><td class="lab" colspan="4">小計（'+g.key+'）</td><td>'+y(s)+'</td></tr>';
+  });
+  if(any) h+='<tr class="big"><td></td><td class="lab" colspan="4">資産合計</td><td>'+y(aTot)+'</td></tr>';
+  let dTot=0, anyD=false;
+  dgroups.forEach(g=>{ if(!g.rows.length) return; anyD=true; let s=0;
+    h+='<tr class="sec"><td class="lab" colspan="'+C+'">'+g.key+'</td></tr>';
+    g.rows.forEach(r=>{ no++; s+=r.price;
+      h+='<tr><td style="text-align:center">'+no+'</td><td class="lab">'+esc(r.kind)+'</td><td class="lab">'+esc(r.detail)+(r.note?'<br><span class="sub">'+esc(r.note)+'</span>':'')+'</td><td></td><td></td><td class="neg">'+y(r.price)+'</td></tr>'; });
+    dTot+=s;
+    h+='<tr class="sub"><td></td><td class="lab" colspan="4">小計（'+g.key+'）</td><td class="neg">'+y(s)+'</td></tr>';
+  });
+  if(anyD) h+='<tr class="big"><td></td><td class="lab" colspan="4">債務・葬式費用 合計</td><td class="neg">'+y(dTot)+'</td></tr>';
+  if(any||anyD) h+='<tr class="big"><td></td><td class="lab" colspan="4">差引純資産額（資産合計 − 債務・葬式費用）</td><td>'+y(aTot-dTot)+'</td></tr>';
+  const lifeY=life.reduce((a,r)=>a+plain(r),0), retY=retire.reduce((a,r)=>a+plain(r),0);
+  const non=Math.min(lifeY,5000000*legalCount)+Math.min(retY,5000000*legalCount);
+  if(non>0) h+='<tr class="ref"><td></td><td class="lab" colspan="4">（参考）生命保険金・退職手当金の非課税金額（限度：各500万円×法定相続人'+legalCount+'人）</td><td class="neg">'+y(non)+'</td></tr>';
+  if(!any&&!anyD) h+='<tr><td colspan="'+C+'" style="text-align:center;color:var(--ink-soft);padding:20px">財産・債務の明細を入力すると、ここに目録が表示されます。</td></tr>';
+  h+='</tbody>';
+  tbl.innerHTML=h;
+  const sm=document.getElementById('listSummary');
+  if(sm) sm.innerHTML=any||anyD ? ('<div class="flow">'+sums.map(s=>'<div class="row"><span>'+s[0]+'</span><span class="v">'+y(s[1])+' 円</span></div>').join('')+
+    '<div class="row total"><span>資産合計</span><span class="v">'+y(aTot)+' 円</span></div>'+
+    '<div class="row minus"><span>債務・葬式費用</span><span class="v">'+y(dTot)+' 円</span></div>'+
+    '<div class="row total"><span>差引純資産額</span><span class="v">'+y(aTot-dTot)+' 円</span></div></div>') : '';
+}
+
+/* ===== 印刷スタンプ（右上に小さく：出力日時＋管理コード） ===== */
+function updatePrintStamp(){
+  const el=document.getElementById('printStamp'); if(!el) return;
+  const ft=(document.querySelector('.foot')||{}).textContent||'';
+  const vm=ft.match(/v(\d+)\.(\d+)/); const dm=ft.match(/(\d{4})-(\d{2})-(\d{2})/);
+  const code=(vm?vm[1]+vm[2]:'')+(dm?'-'+dm[2]+dm[3]:'');
+  const n=new Date(); const p=x=>String(x).padStart(2,'0');
+  el.textContent=n.getFullYear()+'/'+p(n.getMonth()+1)+'/'+p(n.getDate())+' '+p(n.getHours())+':'+p(n.getMinutes())+(code?'　'+code:'');
+}
+window.addEventListener('beforeprint',updatePrintStamp);
+if(window.matchMedia){ try{ window.matchMedia('print').addEventListener('change',e=>{ if(e.matches) updatePrintStamp(); }); }catch(e){} }
+updatePrintStamp();
+/* ===== 保存・読込 ===== */
+const LS_KEY='souzoku_sim_state_v2';
+function collectState(){ syncActivePlan(); return {v:'1.0', deceased:(document.getElementById('deceased')||{}).value||'', baseDate:(document.getElementById('baseDate')||{}).value||'', heirs,lands,bldgs,deposits,secs,otherfin,life,retire,jishaOther,debts,funerals,alloc,bx, divPlans:divPlans.map(p=>({id:p.id,name:p.name,alloc:p.alloc,bx:p.bx})), activePlanIdx, sec2_own:(document.getElementById('sec2_own')||{}).value||'', sec2_debt:(document.getElementById('sec2_debt')||{}).value||'', sec2_life:!!(document.getElementById('sec2_life')||{}).checked, sec2_adopt:(document.getElementById('sec2_adopt')||{}).value||'', sec2_gift:(document.getElementById('sec2_gift')||{}).value||'', cases:(typeof bunkatsuCases!=='undefined'?bunkatsuCases:[])}; }
+function renderAllTables(){ renderHeirs(); renderLands(); renderBldgs(); renderDeposits(); renderSecs(); renderOtherfin(); renderLife(); renderRetire(); renderOtherAsset(); renderDebts(); renderFunerals(); renderShokibo(); renderDivision(); renderAddon(); calc(); renderBunkatsu(); if(document.getElementById('sec2Result')) renderSecond(); }
+function applyState(o){ if(!o) return;
+  const dn=document.getElementById('deceased'), bd=document.getElementById('baseDate');
+  if(dn) dn.value=o.deceased||''; if(bd) bd.value=o.baseDate||'';
+  heirs=o.heirs||[]; lands=o.lands||[]; bldgs=o.bldgs||[]; deposits=o.deposits||[]; secs=o.secs||[]; otherfin=o.otherfin||[]; life=o.life||[]; retire=o.retire||[]; jishaOther=o.jishaOther||[]; debts=o.debts||[]; funerals=o.funerals||[]; alloc=o.alloc||{}; bx=o.bx||{};
+  if(o.divPlans && o.divPlans.length){ divPlans=o.divPlans.map(p=>({id:p.id||uid(),name:p.name||'案',alloc:p.alloc||{},bx:p.bx||{}})); activePlanIdx=Math.min(o.activePlanIdx||0,divPlans.length-1); }
+  else { divPlans=[{id:uid(),name:'案1',alloc:alloc,bx:bx}]; activePlanIdx=0; }
+  setActivePlanRefs();
+  const s2o=document.getElementById('sec2_own'), s2d=document.getElementById('sec2_debt'); if(s2o) s2o.value=o.sec2_own||0; if(s2d) s2d.value=o.sec2_debt||0;
+  const s2l=document.getElementById('sec2_life'), s2a=document.getElementById('sec2_adopt'), s2g=document.getElementById('sec2_gift');
+  if(s2l) s2l.checked=!!o.sec2_life; if(s2a) s2a.value=o.sec2_adopt||0; if(s2g) s2g.value=o.sec2_gift||0;
+  if(o.cases){ bunkatsuCases=o.cases; try{ saveCasesLS(); }catch(e){} }
+  renderAllTables(); if(document.getElementById('compareTable')) renderCompare();
+}
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(collectState())); }catch(e){} }
+function loadLocal(){ try{ const t=localStorage.getItem(LS_KEY); return t?JSON.parse(t):null; }catch(e){ return null; } }
+const APP_VERSION='v2.3';
+function exportJSON(){ const blob=new Blob([JSON.stringify(collectState(),null,2)],{type:'application/json'}); const a=document.createElement('a'); const dt=new Date(); const p2=n=>String(n).padStart(2,'0'); const nm='相続シミュレーション_'+APP_VERSION+'_'+dt.getFullYear()+p2(dt.getMonth()+1)+p2(dt.getDate())+'_'+p2(dt.getHours())+p2(dt.getMinutes())+p2(dt.getSeconds())+'.json'; a.href=URL.createObjectURL(blob); a.download=nm; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+function importJSON(input){ const f=input.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>{ try{ applyState(JSON.parse(e.target.result)); saveLocal(); alert('読み込みました。'); }catch(err){ alert('読み込みに失敗しました：'+err.message); } }; r.readAsText(f); input.value=''; }
+function loadSample(){ if(confirm('サンプルデータに戻します。よろしいですか？')){ seed(); renderAllTables(); saveLocal(); } }
+function clearInputs(){ if(confirm('すべての入力をクリアします。よろしいですか？')){ heirs=[];lands=[];bldgs=[];deposits=[];secs=[];otherfin=[];life=[];retire=[];jishaOther=[];debts=[];funerals=[];alloc={};bx={}; divPlans=[{id:uid(),name:'案1',alloc:alloc,bx:bx}]; activePlanIdx=0; const dn=document.getElementById('deceased'),bd=document.getElementById('baseDate'); if(dn)dn.value=''; if(bd)bd.value=''; renderAllTables(); saveLocal(); } }
+
+/* ===== 二次相続 ===== */
+function computePrimary(){
+  const T=computeTax(); const toMan=x=>x/10000;
+  const spouse=T.spouse; const spLegal=spouse?T.auto[spouse.id]:0;
+  const rows=heirs.map(h=>({id:h.id,name:h.name,rel:h.rel,amt:toMan(T.zaisanH[h.id]),pay:toMan(T.pay[h.id]),after:toMan(T.zaisanH[h.id]+bxv(h.id,'adjust')-T.pay[h.id])}));
+  const spouseAmt=spouse?toMan(T.zaisanH[spouse.id]):0;
+  const spouseAfter=spouse?toMan(T.zaisanH[spouse.id]+bxv(spouse.id,'adjust')-T.pay[spouse.id]):0;
+  const childCount=heirs.filter(h=>RELATIONS[h.rel].group==='child').length;
+  const payTotal=toMan(T.payTotal); const afterTotal=rows.reduce((a,r)=>a+r.after,0);
+  return {zaisan:toMan(T.zaisanTot),kakaku:toMan(T.sumK),legalCount:T.legalCount,basic:toMan(T.basic),isan:toMan(T.isan),T1:toMan(T.T1),spLegal,spouseAmt,spouseAfter,childCount,payTotal,afterTotal,rows};
+}
+function secondTax(estateMan,n2){ // 万円→二次納付(万円)
+  const basic2=3000+600*n2; const isan2=Math.max(0,estateMan-basic2);
+  let T2=0; for(let i=0;i<n2;i++) T2+=taxOf(isan2*(1/n2)); return Math.floor(T2*100)/100;
+}
+function sec2ChartSVG(pts,Z,curX,curSum,best){
+  const W=720,H=340,L=60,R=16,T=18,B=44, iw=W-L-R, ih=H-T-B;
+  const ymax=Math.max(1,...pts.map(p=>p.sum))*1.08;
+  const X2x=X=> L+(Z>0?X/Z:0)*iw, V2y=v=> T+ih-(v/ymax)*ih;
+  const poly=(key,color,wd)=>'<polyline fill="none" stroke="'+color+'" stroke-width="'+wd+'" stroke-linejoin="round" points="'+pts.map(p=>X2x(p.X).toFixed(1)+','+V2y(p[key]).toFixed(1)).join(' ')+'"/>';
+  let g='<rect x="'+L+'" y="'+T+'" width="'+iw+'" height="'+ih+'" fill="#fbfdfb" stroke="#e2e8e1"/>';
+  [0,.5,1].forEach(f=>{ const yv=ymax*f, yy=V2y(yv); g+='<line x1="'+L+'" y1="'+yy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+yy.toFixed(1)+'" stroke="#eef2ee"/><text x="'+(L-6)+'" y="'+(yy+4).toFixed(1)+'" text-anchor="end" font-size="11" fill="#6d7b72">'+fmt(yv)+'</text>'; });
+  [0,.25,.5,.75,1].forEach(f=>{ const xv=Z*f, xx=X2x(xv); g+='<line x1="'+xx.toFixed(1)+'" y1="'+(T+ih)+'" x2="'+xx.toFixed(1)+'" y2="'+(T+ih+4)+'" stroke="#9fb0a6"/><text x="'+xx.toFixed(1)+'" y="'+(T+ih+18)+'" text-anchor="middle" font-size="10.5" fill="#6d7b72">'+fmt(xv)+'</text>'; });
+  const bx=X2x(best.X); g+='<line x1="'+bx.toFixed(1)+'" y1="'+T+'" x2="'+bx.toFixed(1)+'" y2="'+(T+ih)+'" stroke="#3a9d78" stroke-dasharray="4 3" stroke-width="1.4"/><circle cx="'+bx.toFixed(1)+'" cy="'+V2y(best.sum).toFixed(1)+'" r="5" fill="#2f8365"/><text x="'+bx.toFixed(1)+'" y="'+(T-4)+'" text-anchor="middle" font-size="11" font-weight="700" fill="#2f8365">★最適</text>';
+  const cx=X2x(curX); g+='<line x1="'+cx.toFixed(1)+'" y1="'+T+'" x2="'+cx.toFixed(1)+'" y2="'+(T+ih)+'" stroke="#c8791d" stroke-dasharray="2 3"/><circle cx="'+cx.toFixed(1)+'" cy="'+V2y(curSum).toFixed(1)+'" r="4.5" fill="#c8791d"/>';
+  g+=poly('pay1','#4a90c2',2)+poly('t2','#e9a23b',2)+poly('sum','#2f8365',2.8);
+  g+='<text x="'+(L+iw/2)+'" y="'+(H-6)+'" text-anchor="middle" font-size="11" fill="#6d7b72">配偶者の一次取得（万円）→</text>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;max-width:760px">'+g+'</svg>';
+}
+function renderSecond(){
+  const res=document.getElementById('sec2Result'); if(!res) return;
+  const P=computePrimary();
+  const own=pf((document.getElementById('sec2_own')||{}).value)/10000;
+  const debt2=pf((document.getElementById('sec2_debt')||{}).value)/10000;
+  const adopt=Math.max(0,Math.round(pf((document.getElementById('sec2_adopt')||{}).value)));
+  const giftMan=pf((document.getElementById('sec2_gift')||{}).value)/10000;
+  const useLife=!!(document.getElementById('sec2_life')||{}).checked;
+  const n2=Math.max(1,P.childCount+adopt);
+  const lifeCut=useLife?500*n2:0;
+  const cut=debt2+giftMan+lifeCut;
+  const estate=Math.max(0,own+P.spouseAfter-cut);
+  const T2=secondTax(estate,n2);
+  const sumTax=P.payTotal+T2;
+  const hasTaisaku=(useLife||adopt>0||giftMan>0);
+  res.innerHTML=
+    '<div class="result-hero" style="margin-top:14px">'+
+    '<div class="kpi"><div class="lab">配偶者の一次取得（税引後）</div><div class="val"><span>'+fmt(P.spouseAfter)+'</span><small>万円</small></div></div>'+
+    '<div class="kpi"><div class="lab">二次相続の課税価格</div><div class="val"><span>'+fmt(estate)+'</span><small>万円</small></div></div>'+
+    '<div class="kpi tax"><div class="lab">二次相続税</div><div class="val"><span>'+fmt(T2)+'</span><small>万円</small></div></div>'+
+    '<div class="kpi after"><div class="lab">一次＋二次 合計税額</div><div class="val"><span>'+fmt(sumTax)+'</span><small>万円</small></div></div>'+
+    '</div>'+
+    '<div class="flow" style="margin-top:6px">'+
+    '<div class="row"><span>一次相続税（納付合計）</span><span class="v">'+fmt(P.payTotal)+' 万円</span></div>'+
+    '<div class="row"><span>配偶者の一次取得（税引後）＋固有財産</span><span class="v">'+fmt(P.spouseAfter+own)+' 万円</span></div>'+
+    (cut>0?'<div class="row minus"><span>− 二次の債務・葬式費用'+(giftMan>0?'・生前贈与':'')+(lifeCut>0?'・生保非課税枠':'')+'</span><span class="v">'+fmt(cut)+'</span></div>':'')+
+    '<div class="row"><span>二次相続税（子'+n2+'人'+(adopt>0?'＝実子等＋養子'+adopt:'')+'・法定相続分で概算）</span><span class="v">'+fmt(T2)+' 万円</span></div>'+
+    '<div class="row total"><span>合計税額</span><span class="v">'+fmt(sumTax)+' 万円</span></div>'+
+    '</div>';
+  const tbl=document.getElementById('sec2Table'); if(!tbl) return;
+  const Z=P.zaisan, K=P.kakaku, T1=P.T1, spGuard=Math.max(K*P.spLegal,16000);
+  function totalFor(X){
+    const spK=Math.min(X,K); const red=K>0?T1*Math.min(spK,spGuard)/K:0;
+    const pay1=Math.max(0,T1-red);
+    const spAfter=X-Math.max(0,T1*(K>0?spK/K:0)-red);
+    const est=Math.max(0,own+spAfter-cut);
+    const t2=secondTax(est,n2);
+    return {pay1,t2,sum:pay1+t2,X};
+  }
+  const pts=[]; let best=null;
+  for(let i=0;i<=100;i++){ const X=Z*i/100; const r=totalFor(X); pts.push(r); if(!best||r.sum<best.sum) best=r; }
+  const curX=P.spouseAmt, curR=totalFor(curX);
+  const chart=document.getElementById('sec2Chart');
+  if(chart){ let saveVs=curR.sum-best.sum;
+    chart.innerHTML=sec2ChartSVG(pts,Z,curX,curR.sum,best)+
+      '<div class="flow" style="margin-top:10px">'+
+      '<div class="row"><span><b style="color:#c8791d">● 現在の配分</b>（配偶者 '+fmt(curX)+' 万円）の合計税額</span><span class="v">'+fmt(curR.sum)+' 万円</span></div>'+
+      '<div class="row"><span><b style="color:#2f8365">★ 最適な配分</b>（配偶者 '+fmt(best.X)+' 万円）の合計税額</span><span class="v">'+fmt(best.sum)+' 万円</span></div>'+
+      '<div class="row total" style="color:var(--accent-d)"><span>最適化による合計税額の削減余地</span><span class="v">−'+fmt(Math.max(0,saveVs))+' 万円</span></div>'+
+      (hasTaisaku?'<div class="row"><span class="sub">※上記は二次相続の対策を反映した数値です。</span><span></span></div>':'')+
+      '</div>'; }
+  const scen=[['配偶者 0（すべて子へ）',0],['法定相続分（'+(P.spLegal*100).toFixed(0)+'%）',Z*P.spLegal],['合計最小（最適）',best.X],['配偶者 全部',Z]];
+  let h='<thead><tr><th style="text-align:left">配偶者の一次取得</th><th>取得額(万円)</th><th>一次相続税</th><th>二次相続税</th><th>合計税額</th></tr></thead><tbody>';
+  scen.forEach(sc=>{ const r=totalFor(sc[1]); const isBest=Math.abs(sc[1]-best.X)<Z*0.011;
+    h+='<tr'+(isBest?' class="big"':'')+'><td style="text-align:left">'+sc[0]+(isBest?' ★':'')+'</td><td>'+fmt(sc[1])+'</td><td>'+fmt(r.pay1)+'</td><td>'+fmt(r.t2)+'</td><td>'+fmt(r.sum)+'</td></tr>'; });
+  h+='</tbody>';
+  tbl.innerHTML=h;
+}
+
+/* ===== 案比較 ===== */
+let bunkatsuCases=[];
+const LS_CASES='souzoku_sim_cases_v1';
+function loadCases(){ try{ const t=localStorage.getItem(LS_CASES); bunkatsuCases=t?JSON.parse(t):[]; }catch(e){ bunkatsuCases=[]; } }
+function saveCasesLS(){ try{ localStorage.setItem(LS_CASES, JSON.stringify(bunkatsuCases)); }catch(e){} }
+function caseSummary(){ const P=computePrimary(); return {zaisan:P.zaisan,payTotal:P.payTotal,afterTotal:P.afterTotal,rows:P.rows.map(r=>({name:r.name,rel:r.rel,amt:r.amt,pay:r.pay,after:r.after}))}; }
+function addCase(){ const nm=prompt('案の名前を入力してください','案'+(bunkatsuCases.length+1)); if(!nm) return; const st=collectState(); delete st.cases; bunkatsuCases.push({name:nm, state:st, summary:caseSummary()}); saveCasesLS(); renderCompare(); }
+function delCase(i){ if(confirm('この案を削除しますか？')){ bunkatsuCases.splice(i,1); saveCasesLS(); renderCompare(); } }
+function loadCase(i){ if(confirm('この案の内容を読み込みます。現在の入力は上書きされます。よろしいですか？')){ applyState(bunkatsuCases[i].state); saveLocal(); alert('「'+bunkatsuCases[i].name+'」を読み込みました。'); } }
+function renderCompare(){
+  const tbl=document.getElementById('compareTable'); if(!tbl) return;
+  const cur=caseSummary();
+  const cols=[{name:'現在',summary:cur,cur:true}].concat(bunkatsuCases.map((c,i)=>({name:c.name,summary:c.summary,i})));
+  let minPay=Math.min(...cols.map(c=>c.summary.payTotal));
+  let h='<thead><tr><th style="text-align:left">項目</th>'+cols.map(c=>'<th>'+esc(c.name)+(c.cur?'':' <a href="javascript:void(0)" onclick="loadCase('+c.i+')" style="color:var(--accent-d);font-size:11px">読込</a>')+'</th>').join('')+'</tr></thead><tbody>';
+  h+='<tr class="big"><td class="lab">財産総額(万円)</td>'+cols.map(c=>'<td>'+fmt(c.summary.zaisan)+'</td>').join('')+'</tr>';
+  h+='<tr class="big"><td class="lab">納付税額 合計(万円)</td>'+cols.map(c=>'<td'+(Math.abs(c.summary.payTotal-minPay)<0.01?' style="color:var(--accent-d)"':'')+'>'+fmt(c.summary.payTotal)+(Math.abs(c.summary.payTotal-minPay)<0.01?' ★':'')+'</td>').join('')+'</tr>';
+  h+='<tr class="big"><td class="lab">税引後 合計(万円)</td>'+cols.map(c=>'<td>'+fmt(c.summary.afterTotal)+'</td>').join('')+'</tr>';
+  const refRows=cur.rows;
+  refRows.forEach((rr,idx)=>{
+    h+='<tr class="sec"><td class="lab" colspan="'+(cols.length+1)+'">'+esc(rr.name||('相続人'+(idx+1)))+'（'+rr.rel+'）</td></tr>';
+    h+='<tr><td class="lab">　取得財産</td>'+cols.map(c=>{const x=c.summary.rows[idx]; return '<td>'+(x?fmt(x.amt):'-')+'</td>';}).join('')+'</tr>';
+    h+='<tr><td class="lab">　納付税額</td>'+cols.map(c=>{const x=c.summary.rows[idx]; return '<td>'+(x?fmt(x.pay):'-')+'</td>';}).join('')+'</tr>';
+    h+='<tr><td class="lab">　税引後</td>'+cols.map(c=>{const x=c.summary.rows[idx]; return '<td>'+(x?fmt(x.after):'-')+'</td>';}).join('')+'</tr>';
+  });
+  h+='</tbody>'; tbl.innerHTML=h;
+  const del=document.getElementById('caseDel');
+  if(del) del.innerHTML=bunkatsuCases.length? ('保存済み： '+bunkatsuCases.map((c,i)=>'<button class="btn-x" style="margin:2px" onclick="delCase('+i+')">'+esc(c.name)+' ×</button>').join(' ')) : '<span class="sub">まだ案が保存されていません。</span>';
+}
+
+/* ===== 相続対策シミュレーション（非破壊 what-if） ===== */
+/* 現在のグローバル状態を複製→対策を適用→computeTax→元に戻す。入力は一切変更しない。 */
+function whatIf(mutate){
+  const snap={heirs,lands,bldgs,deposits,secs,otherfin,life,retire,jishaOther,debts,funerals,alloc,bx};
+  const clone=x=>JSON.parse(JSON.stringify(x));
+  heirs=clone(heirs); lands=clone(lands); deposits=clone(deposits); otherfin=clone(otherfin);
+  life=clone(life); retire=clone(retire); alloc=clone(alloc); bx=clone(bx);
+  let out;
+  try{ mutate(); out=computeTax(); }
+  finally{
+    heirs=snap.heirs; lands=snap.lands; bldgs=snap.bldgs; deposits=snap.deposits; secs=snap.secs;
+    otherfin=snap.otherfin; life=snap.life; retire=snap.retire; jishaOther=snap.jishaOther;
+    debts=snap.debts; funerals=snap.funerals; alloc=snap.alloc; bx=snap.bx;
+  }
+  return out;
+}
+/* 対象の相続人（配偶者優先、なければ先頭） */
+function primaryHeir(){ return heirs.find(h=>RELATIONS[h.rel].spouse) || heirs[0]; }
+/* 贈与・保険の対象（配偶者軽減で効果が相殺されないよう、非配偶者の相続人＝子等を優先） */
+function giftTarget(){ return heirs.find(h=>!RELATIONS[h.rel].spouse && RELATIONS[h.rel].heir) || heirs.find(h=>!RELATIONS[h.rel].spouse) || primaryHeir(); }
+/* 現預金・その他金融の合計（円） */
+function cashAvailable(){ return deposits.reduce((a,r)=>a+plain(r),0)+otherfin.reduce((a,r)=>a+plain(r),0); }
+/* 課税財産を amt 円だけ圧縮する mutator（対象者の取得を減らす） */
+function mutCompress(amt,heirId){
+  const nid=uid();
+  otherfin.push({id:nid,type:'現金',detail:'（対策：圧縮）',price:-amt,note:''});
+  alloc[nid]={[heirId]:-amt};
+}
+/* amt 円を非配偶者相続人へ取得割合で按分して圧縮（頭打ちを避け、贈与の実態に近づける） */
+function mutCompressSpread(amt,weights){
+  const ids=Object.keys(weights).filter(k=>weights[k]>0);
+  const tot=ids.reduce((a,k)=>a+weights[k],0);
+  if(tot<=0){ return; }
+  ids.forEach(k=>{ const share=Math.round(amt*weights[k]/tot); const nid=uid();
+    otherfin.push({id:nid,type:'現金',detail:'（対策：圧縮）',price:-share,note:''}); alloc[nid]={[k]:-share}; });
+}
+
+function renderTaisaku(){
+  const host=document.getElementById('ts_cards'); if(!host) return;
+  const toMan=x=>x/10000;
+  const base=computeTax();
+  const nowPay=base.payTotal;
+  const target=primaryHeir();
+  const cards=[];
+
+  /* --- 対策A：生命保険の非課税枠の活用 --- */
+  const frame=5000000*base.legalCount;
+  const lifeCur=life.reduce((a,r)=>a+plain(r),0);
+  const cash=cashAvailable();
+  const swap=Math.max(0,Math.min(frame-lifeCur,cash));
+  const gt=giftTarget();
+  if(target){
+    if(swap>0 && gt){
+      const r=whatIf(()=>{
+        const lid=uid(); life.push({id:lid,insurer:'（対策）',detail:'非課税枠の活用',price:swap,note:''}); alloc[lid]={[gt.id]:swap};
+        mutCompress(swap,gt.id);
+      });
+      cards.push({on:true,key:'life',title:'生命保険の非課税枠の活用',
+        desc:'非課税枠（500万円×'+base.legalCount+'人＝'+man(frame)+'万円）の未使用分 '+man(swap)+'万円を、現預金から生命保険に組み替えた場合（受取人を'+esc(gt.name||'相続人')+'と想定）。',
+        pay:r.payTotal,save:nowPay-r.payTotal});
+    }else if(frame-lifeCur<=0){
+      cards.push({on:false,key:'life',title:'生命保険の非課税枠の活用',
+        desc:'非課税枠（'+man(frame)+'万円）はすでに使い切っています。追加の効果はありません。',pay:nowPay,save:0});
+    }else{
+      cards.push({on:false,key:'life',title:'生命保険の非課税枠の活用',
+        desc:'非課税枠に未使用分（'+man(frame-lifeCur)+'万円）がありますが、組み替え原資となる現預金がありません。',pay:nowPay,save:0});
+    }
+  }
+
+  /* --- 対策B：養子縁組（1人追加） --- */
+  const r2=whatIf(()=>{ heirs.push({id:uid(),name:'（養子）',rel:'子',share:'',manual:false}); });
+  cards.push({on:true,key:'adopt',title:'養子縁組（1人）',
+    desc:'法定相続人を1人増やした場合。基礎控除＋600万円、生命保険・退職金の非課税枠が各＋500万円になり、相続税の総額計算での分割数も増えます。',
+    pay:r2.payTotal,save:nowPay-r2.payTotal});
+
+  /* --- 対策C：小規模宅地等の特例（適用状況） --- */
+  const hasTakuchi=lands.some(l=>l.shokibo);
+  const eligible=lands.filter(l=>!l.shokibo && (l.chimoku||'').includes('宅地'));
+  if(hasTakuchi){
+    const rOff=whatIf(()=>{ lands.forEach(l=>l.shokibo=false); });
+    cards.push({on:true,key:'shokibo',info:true,title:'小規模宅地等の特例（適用中）',
+      desc:'現在この特例を適用しています。適用しない場合と比べて納付税額を軽減できています。',
+      pay:nowPay,save:rOff.payTotal-nowPay});
+  }else if(eligible.length){
+    const rOn=whatIf(()=>{ lands.forEach(l=>{ if((l.chimoku||'').includes('宅地')) l.shokibo=true; }); });
+    cards.push({on:true,key:'shokibo',title:'小規模宅地等の特例の適用',
+      desc:'宅地に特例を適用した場合（要件を満たす前提の概算）。②不動産タブの「小規模宅地減額対象」で適用します。',
+      pay:rOn.payTotal,save:nowPay-rOn.payTotal});
+  }
+
+  /* --- A＋B 併用 --- */
+  let combined=nowPay;
+  if(gt && swap>0){
+    combined=whatIf(()=>{
+      const lid=uid(); life.push({id:lid,insurer:'（対策）',detail:'非課税枠の活用',price:swap,note:''}); alloc[lid]={[gt.id]:swap};
+      mutCompress(swap,gt.id);
+      heirs.push({id:uid(),name:'（養子）',rel:'子',share:'',manual:false});
+    }).payTotal;
+  }else{
+    combined=r2.payTotal;
+  }
+  setText('ts_now',fmt(toMan(nowPay)));
+  setText('ts_all',fmt(toMan(combined)));
+  setText('ts_save',fmt(toMan(nowPay-combined)));
+
+  /* --- カード描画 --- */
+  host.innerHTML=cards.map(c=>{
+    const saveMan=toMan(c.save), payMan=toMan(c.pay);
+    const pos=c.save>0.005;
+    const badge=c.info?'<span class="tag sp">適用中</span>':(pos?'<span class="tag" style="background:var(--accent-l);color:var(--accent-d)">節税 '+fmt(saveMan)+'万円</span>':'<span class="tag" style="background:#eef2ee;color:var(--ink-soft)">効果なし</span>');
+    return '<div class="card" style="margin-bottom:12px;padding:16px 18px">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">'+
+        '<div style="font-size:14.5px;font-weight:700">'+esc(c.title)+' '+badge+'</div>'+
+        '<div style="text-align:right"><div class="sub">'+(c.info?'この特例による軽減額':'この対策の節税効果')+'</div>'+
+          '<div style="font-size:20px;font-weight:700;color:'+(pos?'var(--accent-d)':'var(--ink-soft)')+'">'+(pos?'−'+fmt(saveMan):'±0')+' <span class="sub">万円</span></div></div>'+
+      '</div>'+
+      '<p class="sub" style="margin:8px 0 0;line-height:1.7">'+esc(c.desc)+'</p>'+
+      '<div class="sub" style="margin-top:6px">適用後の納付税額：<b>'+fmt(payMan)+' 万円</b></div>'+
+    '</div>';
+  }).join('');
+
+  /* --- 財産圧縮スライダー --- */
+  const amt=pf((document.getElementById('ts_amount')||{}).value)*10000;
+  const sl=document.getElementById('ts_slider'); const am=document.getElementById('ts_amount');
+  const zaisanMan=toMan(base.zaisanTot);
+  if(sl){ const maxMan=Math.max(1000,Math.ceil(zaisanMan/1000)*1000); sl.max=maxMan; sl.value=Math.min(pf((am||{}).value),maxMan); }
+  const compEl=document.getElementById('ts_compress');
+  if(compEl){
+    let payC=nowPay;
+    const w={}; heirs.forEach(h=>{ if(!RELATIONS[h.rel].spouse) w[h.id]=Math.max(0,base.zaisanH[h.id]); });
+    if(Object.values(w).reduce((a,b)=>a+b,0)<=0) heirs.forEach(h=>w[h.id]=Math.max(0,base.zaisanH[h.id]));
+    if(amt>0){ payC=whatIf(()=>mutCompressSpread(Math.min(amt,base.zaisanTot),w)).payTotal; }
+    const saveC=nowPay-payC; const rate=amt>0?saveC/amt*100:0;
+    compEl.innerHTML=
+      '<div class="row"><span>圧縮額（子等が贈与を受ける前提）</span><span class="v">'+fmt(toMan(amt))+' 万円</span></div>'+
+      '<div class="row"><span>圧縮後の納付税額</span><span class="v">'+fmt(toMan(payC))+' 万円</span></div>'+
+      '<div class="row total" style="color:var(--accent-d)"><span>相続税の軽減額</span><span class="v">−'+fmt(toMan(saveC))+' 万円</span></div>'+
+      '<div class="row"><span>圧縮額に対する軽減割合</span><span class="v">'+rate.toFixed(1)+' %</span></div>';
+  }
+}
+function syncSlider(v){ const sl=document.getElementById('ts_slider'); if(sl) sl.value=pf(v); renderTaisaku(); }
+
+/* ===== 印刷レイアウト（表示中タブを1ページに。A4縦／分割案のみA3縦） ===== */
+function activePanel(){ return document.querySelector('.panel.active'); }
+function printCurrent(){ window.print(); }
+const PRINT_TITLES={ p_heir:'① 相続人・基本情報', p_re:'② 不動産', p_fin:'③ 金融資産', p_other:'④ その他資産', p_debt:'⑤ 負債・葬式費用', p_addon:'⑥ 加算・その他', p_div:'⑦ 財産分割', p_res:'⑧ 計算結果', p_report:'⑨ 財産分割案 ＆ 相続税概算（帳票）', p_second:'⑩ 二次相続シミュレーション', p_compare:'⑪ 分割案の比較', p_taisaku:'⑫ 相続対策シミュレーション' };
+let _prevTitle=null;
+/* シミュレーション名（既定：被相続人名＋相続発生日）。PDF保存時のファイル名の先頭に使う */
+function simBaseName(){
+  const dn=((document.getElementById('deceased')||{}).value||'').trim();
+  const bd=((document.getElementById('baseDate')||{}).value||'').trim();
+  const base=[dn,bd].filter(Boolean).join('_');
+  return sanitizeName(base||'相続シミュレーション');
+}
+function sanitizeName(s){ return (s||'').replace(/[\\\/:*?"<>|\r\n\t]/g,'').replace(/\s+/g,' ').trim(); }
+function setPrintTitle(name){ if(_prevTitle===null) _prevTitle=document.title; document.title=sanitizeName(name); }
+function restorePrintTitle(){ if(_prevTitle!==null){ document.title=_prevTitle; _prevTitle=null; } }
+function applyPrintLayout(){
+  const p=activePanel(); if(!p) return;
+  document.body.classList.add('printing');
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('printtarget'));
+  p.classList.add('printtarget');
+  // 番号付き大見出し
+  const tabBtn=document.querySelector('.tab.active');
+  const title=PRINT_TITLES[p.id]||(tabBtn?tabBtn.textContent.trim():'');
+  const dn=(document.getElementById('deceased')||{}).value||'';
+  const pt=document.getElementById('printTitle');
+  if(pt) pt.innerHTML=esc(title)+(dn?' <span style="font-size:14px;font-weight:600;color:var(--ink-soft)">（被相続人：'+esc(dn)+'）</span>':'');
+  const h2=p.querySelector('h2'); if(h2) h2.classList.add('print-hide-h2'); // 重複する主見出しは印刷時のみ隠す
+  setPrintTitle(simBaseName()+'_'+title.replace(/\s+/g,''));
+  const isReport=(p.id==='p_report');
+  const size=isReport?'A3':'A4';
+  let st=document.getElementById('dynPage'); if(!st){ st=document.createElement('style'); st.id='dynPage'; document.head.appendChild(st); }
+  st.textContent='@page{ size:'+size+' portrait; margin:10mm; }';
+  fitToPage(p,size,isReport);
+}
+function clearPrintLayout(){ const p=document.querySelector('.printtarget'); if(p){ p.style.zoom=''; const h2=p.querySelector('h2.print-hide-h2'); if(h2) h2.classList.remove('print-hide-h2'); p.classList.remove('printtarget'); } document.body.classList.remove('printing'); restorePrintTitle(); }
+function measurePanel(p){
+  let w=p.scrollWidth, h=p.scrollHeight;
+  if(w>0 && h>0){ p.querySelectorAll('table').forEach(t=>{ w=Math.max(w,t.scrollWidth); }); return [w,h]; }
+  // 非表示なら一時的に画面外へ可視化して測る（まとめて印刷対応）
+  const saved=p.getAttribute('style')||'';
+  p.style.display='block'; p.style.position='absolute'; p.style.visibility='hidden'; p.style.left='-10000px'; p.style.top='0'; p.style.zoom='';
+  w=p.scrollWidth; h=p.scrollHeight; p.querySelectorAll('table').forEach(t=>{ w=Math.max(w,t.scrollWidth); });
+  p.setAttribute('style',saved);
+  return [w,h];
+}
+function fitToPage(p,size,allowUp){
+  p.style.zoom=''; // 一旦リセットして実寸を測る
+  const mm=25.4, dpi=96, margin=10;
+  const dim=size==='A3'?[297,420]:[210,297];
+  const availW=(dim[0]-margin*2)*dpi/mm, availH=(dim[1]-margin*2)*dpi/mm;
+  const [w,h]=measurePanel(p);
+  if(w<=0||h<=0) return;
+  const fit=Math.min(availW/w, availH/h);       // ページに収まる（＝ちょうど埋まる）倍率
+  const MAX_UP=1.8;                              // 常識的な拡大上限（180%まで）
+  if(fit<0.999){ p.style.zoom=fit*0.995; }       // 収まらなければ縮小
+  else if(allowUp && fit>1.02){ p.style.zoom=Math.min(fit*0.98, MAX_UP); } // 余白があれば拡大（上限あり・端に少し余白）
+}
+window.addEventListener('beforeprint', onBeforePrint);
+window.addEventListener('afterprint', onAfterPrint);
+
+/* ===== まとめて印刷 ===== */
+let _batch=null;
+function tabOrder(){ return [...document.querySelectorAll('.tabs .tab')].map(t=>t.dataset.tab); }
+function openPrintDialog(){
+  const list=document.getElementById('pmList'); if(!list) return;
+  const def=['p_res','p_report','p_second']; // 既定：結果・帳票・二次相続
+  list.innerHTML=tabOrder().map(id=>{
+    const label=PRINT_TITLES[id]||id;
+    const on=def.includes(id)?'checked':'';
+    return '<label class="pm-item"><input type="checkbox" class="pm-check" value="'+id+'" '+on+'><span>'+esc(label)+'</span></label>';
+  }).join('');
+  document.getElementById('printModal').style.display='flex';
+}
+function closePrintDialog(){ const m=document.getElementById('printModal'); if(m) m.style.display='none'; }
+function pmAll(on){ document.querySelectorAll('.pm-check').forEach(c=>c.checked=on); }
+function pmPreset(){ const s=['p_res','p_report','p_second']; document.querySelectorAll('.pm-check').forEach(c=>c.checked=s.includes(c.value)); }
+function runBatchPrint(){
+  const ids=[...document.querySelectorAll('.pm-check:checked')].map(c=>c.value);
+  if(!ids.length){ alert('印刷するタブを1つ以上選んでください。'); return; }
+  closePrintDialog();
+  _batch=ids;
+  setTimeout(()=>window.print(), 60); // モーダルを閉じてから印刷
+}
+function onBeforePrint(){ if(_batch) applyBatchLayout(_batch); else applyPrintLayout(); }
+function onAfterPrint(){ if(_batch){ clearBatchLayout(); _batch=null; } else clearPrintLayout(); }
+
+function applyBatchLayout(ids){
+  document.body.classList.add('printing','batchprint');
+  setPrintTitle(simBaseName()+'_まとめて印刷');
+  const dn=(document.getElementById('deceased')||{}).value||'';
+  const st=document.getElementById('dynPage'); if(st) st.textContent=''; // 既定@pageを無効化し名前付きページに委ねる
+  const pt=document.getElementById('printTitle'); if(pt) pt.textContent='';
+  const sel=tabOrder().filter(id=>ids.includes(id));
+  sel.forEach((id,i)=>{
+    const p=document.getElementById(id); if(!p) return;
+    p.classList.add('pp-on'); if(i===0) p.classList.add('pp-first');
+    const isRep=(id==='p_report'); p.classList.add(isRep?'pp-a3':'pp-a4');
+    // 見出し（番号付き）
+    const t=document.createElement('div'); t.className='pp-title';
+    t.innerHTML=esc(PRINT_TITLES[id]||id)+(dn?' <span style="font-size:14px;font-weight:600;color:var(--ink-soft)">（被相続人：'+esc(dn)+'）</span>':'');
+    p.insertBefore(t,p.firstChild);
+    const h2=p.querySelector('h2'); if(h2) h2.classList.add('print-hide-h2'); // 主見出し重複を隠す
+    fitToPage(p, isRep?'A3':'A4', isRep);
+  });
+}
+function clearBatchLayout(){
+  document.querySelectorAll('.panel.pp-on').forEach(p=>{
+    p.style.zoom='';
+    p.classList.remove('pp-on','pp-first','pp-a3','pp-a4');
+    const h2=p.querySelector('h2.print-hide-h2'); if(h2) h2.classList.remove('print-hide-h2');
+    const t=p.querySelector('.pp-title'); if(t) t.remove();
+  });
+  document.body.classList.remove('printing','batchprint');
+  restorePrintTitle();
+}
+
+/* ===== ブラウザ一時保存スロット ===== */
+const LS_SLOTS='souzoku_sim_slots_v1';
+let slots=[];
+function loadSlots(){ try{ const t=localStorage.getItem(LS_SLOTS); slots=t?JSON.parse(t):[]; }catch(e){ slots=[]; } }
+function saveSlotsLS(){ try{ localStorage.setItem(LS_SLOTS, JSON.stringify(slots)); }catch(e){} }
+function stampNow(){ const n=new Date(); const p=x=>String(x).padStart(2,'0'); return n.getFullYear()+'-'+p(n.getMonth()+1)+'-'+p(n.getDate())+' '+p(n.getHours())+':'+p(n.getMinutes()); }
+function saveSlot(){ const nm=prompt('ブラウザ一時保存の名前を入力してください', (document.getElementById('deceased')||{}).value ? (document.getElementById('deceased').value+' '+stampNow()) : ('一時保存'+(slots.length+1))); if(!nm) return; const st=collectState(); delete st.cases; slots.unshift({name:nm, time:stampNow(), state:st}); saveSlotsLS(); renderSlots(); }
+function loadSlot(i){ if(confirm('「'+slots[i].name+'」を読み込みます。現在の入力は上書きされます。よろしいですか？')){ applyState(slots[i].state); saveLocal(); alert('「'+slots[i].name+'」を読み込みました。'); } }
+function delSlot(i){ if(confirm('「'+slots[i].name+'」を削除しますか？')){ slots.splice(i,1); saveSlotsLS(); renderSlots(); } }
+function renderSlots(){ const el=document.getElementById('slotBar'); if(!el) return;
+  if(slots.length===0){ el.innerHTML='<span class="sub">ブラウザ一時保存はまだありません（「ブラウザに一時保存」で保存できます）。</span>'; return; }
+  el.innerHTML='<span class="sub" style="margin-right:4px">ブラウザ一時保存：</span>'+slots.map((s,i)=>'<span class="slot-chip">'+esc(s.name)+'<span class="sub" style="margin:0 4px">'+esc(s.time)+'</span><a href="javascript:void(0)" onclick="loadSlot('+i+')">読込</a> <a href="javascript:void(0)" onclick="delSlot('+i+')" style="color:var(--rose)">削除</a></span>').join('');
+}
+loadCases(); loadSlots(); renderSlots();
+const _saved=loadLocal();
+if(_saved){ applyState(_saved); }
+else { seed(); renderHeirs(); renderLands(); renderBldgs(); renderDeposits(); renderSecs(); renderOtherfin(); renderLife(); renderRetire(); renderOtherAsset(); renderDebts(); renderFunerals(); renderShokibo(); renderDivision(); calc(); renderBunkatsu(); renderAddon(); }
+</script>
+</body>
+</html>

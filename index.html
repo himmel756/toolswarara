@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社内計算ツール</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+  :root{
+    --bg:#fbf7ef;
+    --panel:#ffffff;
+    --ink:#3d4a3e;
+    --ink-soft:#6f7d6e;
+    --line:#e7e0d2;
+    --accent:#5aa897;
+    --accent-deep:#3f8576;
+    --accent-soft:#e3f1ec;
+    --amber:#f0a868;
+    --amber-soft:#fbe7d4;
+    --sky:#8cc6e0;
+    --sky-soft:#e2f1f7;
+    --shadow:0 4px 18px rgba(90,168,151,.10);
+    --radius:16px;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    background:
+      radial-gradient(circle at 12% 8%, #fdeede 0, transparent 38%),
+      radial-gradient(circle at 88% 92%, #e3f1ec 0, transparent 40%),
+      var(--bg);
+    color:var(--ink);
+    padding:28px 16px 48px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:880px;margin:0 auto;}
+
+  header.title{text-align:center;margin-bottom:26px;}
+  header.title .leaf{display:inline-block;width:42px;height:42px;margin-bottom:6px;}
+  header.title h1{
+    font-family:'Zen Maru Gothic',sans-serif;
+    font-weight:700;font-size:1.85rem;
+    margin:0 0 6px;letter-spacing:.04em;
+    color:var(--accent-deep);
+  }
+  header.title .sub{color:var(--ink-soft);font-size:.92rem;letter-spacing:.02em;}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
+    gap:16px;
+  }
+  .tool{
+    display:flex;flex-direction:column;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:20px 20px 18px;
+    color:inherit;text-decoration:none;
+    transition:.18s;
+  }
+  .tool:hover{border-color:var(--accent);transform:translateY(-2px);}
+  .tool:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .tool .head{display:flex;align-items:center;gap:9px;margin-bottom:10px;}
+  .tool .dot{
+    width:11px;height:11px;border-radius:50%;flex:none;
+    background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft);
+  }
+  .tool .dot.amber{background:var(--amber);box-shadow:0 0 0 4px var(--amber-soft);}
+  .tool .dot.sky{background:var(--sky);box-shadow:0 0 0 4px var(--sky-soft);}
+  .tool h2{
+    font-family:'Zen Maru Gothic',sans-serif;
+    font-size:1.08rem;margin:0;color:var(--accent-deep);
+  }
+  .tool p{margin:0 0 14px;font-size:.86rem;line-height:1.7;color:var(--ink-soft);flex:1;}
+  .tool .foot{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .tag{
+    font-size:.74rem;font-weight:500;
+    color:var(--accent-deep);background:var(--accent-soft);
+    padding:3px 10px;border-radius:20px;
+  }
+  .tag.draft{color:#b06a2c;background:var(--amber-soft);}
+  .go{font-size:.85rem;font-weight:500;color:var(--accent-deep);}
+
+  .note{
+    font-size:.78rem;color:var(--ink-soft);
+    line-height:1.7;margin-top:24px;
+    background:#fffdf9;border:1px solid var(--line);
+    border-radius:11px;padding:13px 15px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="title">
+    <svg class="leaf" viewBox="0 0 48 48" fill="none">
+      <path d="M24 6c9 4 14 11 14 20 0 8-6 15-14 16-8-1-14-8-14-16 0-9 5-16 14-20z" fill="#e3f1ec" stroke="#5aa897" stroke-width="1.6"/>
+      <path d="M24 12v26M24 20l6-5M24 26l-6-5M24 31l6-5" stroke="#5aa897" stroke-width="1.6" stroke-linecap="round"/>
+    </svg>
+    <h1>社内計算ツール</h1>
+    <div class="sub">使いたいツールを選んでください</div>
+  </header>
+
+  <div class="grid" id="tools"></div>
+
+  <div class="note">
+    各ツールはブラウザ上だけで計算します（入力した内容はどこにも送信されません）。
+    計算結果はあくまで目安です。最終的な判断は担当税理士・所轄税務署にご確認ください。
+  </div>
+
+</div>
+
+<script>
+  /*
+    ツール一覧 — ツールを追加するときは、ここに1行足すだけでOK。
+      file  : このフォルダ内のファイル名
+      url   : Google Sites のページURL（Sites に貼ったら記入。空ならファイル名にリンク）
+      color : 丸印の色  '' / 'amber' / 'sky'
+      tag   : 右下の小さなラベル。'たたき台' にするとオレンジ表示
+  */
+  const TOOLS = [
+    { title:'源泉所得税 計算ツール', file:'gensen.html',  url:'https://sites.google.com/view/toolswarara/gensen', color:'',      tag:'利息・配当',
+      desc:'法人が受け取る利息・配当の入金額（税引後）から、税引前の金額と源泉所得税を逆算します。' },
+    { title:'相続シミュレーション', file:'souzoku.html', url:'https://sites.google.com/view/toolswarara/souzoku', color:'amber', tag:'たたき台',
+      desc:'相続人・財産を入力して、分割案ごとの相続税の概算と財産目録を作成します。' },
+    { title:'儲けのカーナビ',       file:'mokenavi.html', url:'https://sites.google.com/view/toolswarara/mokenavi', color:'sky',   tag:'たたき台',
+      desc:'弥生の「残高試算表（年間推移）」を読み込んで、月次の経営ダッシュボードを表示します。' },
+    { title:'単年度経営計画書 作成ツール', file:'keikaku.html', url:'https://sites.google.com/view/toolswarara/keikaku', color:'',   tag:'経営計画',
+      desc:'売上・人件費・原価・設備投資などを入力して、単年度の経営計画書と資金計画を作成します。' },
+    { title:'相続税申告 ご準備書類チェックリスト', file:'souzoku-shorui.html', url:'https://sites.google.com/view/toolswarara/souzoku-shorui', color:'amber', tag:'お客様向け',
+      desc:'相続税の申告に向けて、お客様にご準備いただく書類の案内とチェックリストです。' },
+  ];
+
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  document.getElementById('tools').innerHTML = TOOLS.map(t => `
+    <a class="tool" href="${esc(t.url || t.file)}" target="_blank" rel="noopener">
+      <div class="head"><span class="dot ${esc(t.color)}"></span><h2>${esc(t.title)}</h2></div>
+      <p>${esc(t.desc)}</p>
+      <div class="foot">
+        <span class="tag ${t.tag === 'たたき台' ? 'draft' : ''}">${esc(t.tag)}</span>
+        <span class="go">開く →</span>
+      </div>
+    </a>`).join('');
+</script>
+</body>
+</html>

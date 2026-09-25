@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>相続税の申告に向けて ご準備いただく書類</title>
+<style>
+  :root{
+    --paper:#fdfcf9;
+    --ink:#2b3340;
+    --ink-mid:#5c6673;
+    --ink-soft:#8b939d;
+    --rule:#e4e0d6;
+    --ai:#3f6c9e;        /* 藍 */
+    --ai-pale:#eaf1f8;
+    --wakaba:#5f9268;    /* 若葉 */
+    --wakaba-pale:#eaf3ea;
+    --kaki:#c07a4a;      /* 柿 */
+    --kaki-pale:#faf0e6;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:#f0eee8;color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Yu Gothic","Meiryo",sans-serif;
+    font-size:14.5px;line-height:1.85;
+  }
+  .sheet{
+    max-width:860px;margin:0 auto;background:var(--paper);
+    padding:44px 52px 64px;
+    box-shadow:0 2px 20px rgba(50,55,60,.09);
+  }
+
+  /* --- 見出し --- */
+  .mincho{font-family:"Yu Mincho","YuMincho","Hiragino Mincho ProN","Noto Serif JP",serif;}
+  header.doc{border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:8px}
+  .eyebrow{font-size:12px;letter-spacing:.32em;color:var(--ai);font-weight:700;margin:0}
+  .headline{display:flex;justify-content:space-between;align-items:baseline;gap:20px;flex-wrap:wrap;margin:0 0 10px}
+  .office{font-size:13.5px;font-weight:600;letter-spacing:.08em;color:var(--ink);white-space:nowrap}
+  header.doc h1{
+    font-size:29px;font-weight:600;margin:0 0 10px;letter-spacing:.06em;line-height:1.5;
+  }
+  header.doc p.lead{margin:0;color:var(--ink-mid);font-size:14px;line-height:1.9}
+
+  .meta{display:flex;flex-wrap:wrap;gap:10px 26px;margin:18px 0 26px;font-size:12.5px;color:var(--ink-mid)}
+  .meta div{border-bottom:1px dotted var(--rule);padding-bottom:3px;min-width:190px;flex:1}
+  .meta b{color:var(--ink);font-weight:600;margin-right:8px}
+
+  /* --- 冒頭のご案内 --- */
+  .intro{
+    background:var(--ai-pale);border-left:4px solid var(--ai);
+    padding:16px 20px;margin-bottom:14px;font-size:13.5px;line-height:1.9;
+  }
+  .intro h2{font-size:15px;margin:0 0 6px;letter-spacing:.04em}
+  .intro p{margin:0 0 8px}
+  .intro p:last-child{margin-bottom:0}
+  .intro p.rule{background:#fff;border:1px solid #c6d6e6;padding:9px 13px;margin-top:10px}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:0 0 30px;font-size:12px;color:var(--ink-mid)}
+  .legend span.t{font-weight:600;color:var(--ink)}
+
+  /* --- タグ --- */
+  .tag{
+    display:inline-block;font-size:11px;font-weight:700;letter-spacing:.02em;
+    padding:1px 8px;border-radius:2px;white-space:nowrap;line-height:1.7;
+  }
+  .t-home{background:var(--wakaba-pale);color:#446b4b}
+  .t-city{background:var(--kaki-pale);color:#9d5f34}
+  .t-bank{background:var(--ai-pale);color:#2f5a86}
+  .t-ask{background:#f3f1ec;color:#6b6459}
+
+  /* --- セクション --- */
+  section.blk{margin-bottom:30px}
+  section.blk > h2{
+    display:flex;align-items:baseline;gap:12px;
+    font-size:17px;font-weight:600;margin:0 0 4px;letter-spacing:.05em;
+    border-bottom:1px solid var(--rule);padding-bottom:8px;
+  }
+  section.blk > h2 .no{
+    font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--ai);
+    border:1px solid #c6d6e6;border-radius:2px;padding:1px 7px;flex:0 0 auto;
+    font-family:"Helvetica Neue",Arial,sans-serif;
+  }
+  section.blk > .desc{margin:8px 0 12px;font-size:13px;color:var(--ink-mid);line-height:1.85}
+
+  ul.items{list-style:none;margin:0;padding:0}
+  ul.items > li{
+    display:flex;gap:12px;padding:9px 2px;border-bottom:1px dotted var(--rule);
+    break-inside:avoid;page-break-inside:avoid;
+  }
+  ul.items > li:last-child{border-bottom:none}
+  input.box{
+    appearance:none;-webkit-appearance:none;
+    flex:0 0 auto;width:17px;height:17px;margin:5px 0 0;
+    border:1.5px solid #a9b0b8;border-radius:2px;background:#fff;cursor:pointer;
+    position:relative;
+  }
+  input.box:checked{background:var(--wakaba);border-color:var(--wakaba)}
+  input.box:checked::after{
+    content:"";position:absolute;left:5px;top:1px;width:5px;height:10px;
+    border:solid #fff;border-width:0 2px 2px 0;transform:rotate(42deg);
+  }
+  input.box:focus-visible{outline:2px solid var(--ai);outline-offset:2px}
+  .body{flex:1;min-width:0}
+  .ttl{font-weight:600;line-height:1.7}
+  .ttl .tag{margin-left:8px;vertical-align:1px}
+  .sub{font-size:12.5px;color:var(--ink-mid);line-height:1.8;margin-top:1px}
+  .sub em{font-style:normal;color:var(--kaki);font-weight:600}
+
+  .grp{
+    font-size:12.5px;color:var(--ai);font-weight:700;letter-spacing:.06em;
+    margin:14px 0 2px;padding-left:2px;
+  }
+  .grp:first-of-type{margin-top:4px}
+
+  /* --- 名寄せ表（金融機関一覧） --- */
+  table.list{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:13px}
+  table.list th,table.list td{border:1px solid var(--rule);padding:7px 9px;text-align:left}
+  table.list th{background:#f5f3ee;font-weight:600;font-size:12px;color:var(--ink-mid);letter-spacing:.04em}
+  table.list td.c{text-align:center;width:62px}
+  table.list td.n{width:36%}
+
+  /* --- 末尾 --- */
+  .closing{background:#f5f3ee;padding:18px 22px;margin-top:34px;font-size:13px;line-height:1.9;break-inside:avoid}
+  .closing h2{font-size:15px;margin:0 0 8px;letter-spacing:.04em}
+  .closing ul{margin:0;padding-left:1.2em}
+  .closing li{margin-bottom:5px}
+  /* 確認用一覧（最終ページ） */
+  section.summary{margin-top:38px;padding-top:22px;border-top:2px solid var(--ink)}
+  section.summary > h2{font-size:19px;font-weight:600;margin:0 0 4px;letter-spacing:.06em}
+  section.summary > p.note{margin:0 0 16px;font-size:12.5px;color:var(--ink-mid)}
+  .sumgrid{column-count:2;column-gap:30px}
+  .sumblk{break-inside:avoid;page-break-inside:avoid;margin-bottom:14px}
+  .sumblk h3{font-size:12.5px;font-weight:700;letter-spacing:.05em;color:var(--ai);
+    margin:0 0 5px;padding-bottom:3px;border-bottom:1px solid var(--rule)}
+  .sumblk h4{font-size:11.5px;font-weight:700;color:var(--ink-mid);margin:7px 0 3px}
+  .sumblk ul{list-style:none;margin:0;padding:0}
+  .sumblk li{display:flex;gap:7px;font-size:11.8px;line-height:1.55;padding:2.5px 0;align-items:flex-start}
+  .sumblk li input.box{width:13px;height:13px;margin-top:2px;border-width:1.3px}
+  .sumblk li input.box:checked::after{left:3.5px;top:0;width:4px;height:8px;border-width:0 1.6px 1.6px 0}
+  .sumblk li span{flex:1;min-width:0}
+  @media print{
+    section.summary{break-before:page;page-break-before:always;
+      margin-top:0;padding-top:0;border-top:none}
+    section.summary > h2{font-size:15pt;font-weight:700;color:#1a2028}
+    section.summary > p.note{color:#3d4650;font-size:9.5pt}
+    .sumblk h3{color:#2c5b8a;font-size:10.5pt;border-bottom:0.8pt solid #2c5b8a}
+    .sumblk h4{color:#3d4650;font-size:9.5pt}
+    .sumblk li{font-size:9.4pt;color:#1a2028}
+  }
+  @media(max-width:640px){ .sumgrid{column-count:1} }
+
+  /* 確認用一覧のみを印刷するモード */
+  body.sumonly .intro,
+  body.sumonly .legend,
+  body.sumonly .editnote,
+  body.sumonly section.blk,
+  body.sumonly .closing,
+  body.sumonly .memo,
+  body.sumonly header.doc p.lead{display:none}
+  body.sumonly section.summary{margin-top:22px;padding-top:18px}
+  @media print{
+    body.sumonly section.summary{break-before:auto;page-break-before:auto;margin-top:14px;padding-top:0;border-top:none}
+    body.sumonly header.doc{margin-bottom:6px}
+    body.sumonly .meta{margin:14px 0 6px}
+  }
+
+  .memo{margin-top:26px}
+  .memo h2{font-size:14px;margin:0 0 8px;letter-spacing:.06em;color:var(--ink-mid)}
+  .memo .lines{border:1px solid var(--rule);height:130px;
+    background:repeating-linear-gradient(to bottom,transparent 0 31px,var(--rule) 31px 32px)}
+  footer.doc{margin-top:30px;padding-top:16px;border-top:2px solid var(--ink);
+    font-size:12px;color:var(--ink-mid);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-end}
+  footer.doc .fo{font-family:"Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;
+    font-size:16px;color:var(--ink);letter-spacing:.06em;margin-bottom:4px}
+  footer.doc .fi{line-height:1.9}
+  footer.doc .fi span{margin-right:14px;white-space:nowrap}
+  footer.doc .fr{font-size:11.5px;color:var(--ink-soft);text-align:right}
+
+  .toolbar{max-width:860px;margin:18px auto 0;display:flex;justify-content:flex-end;
+    gap:8px;flex-wrap:wrap;align-items:center}
+  .toolbar .status{font-size:11.5px;color:var(--ink-soft);margin-right:auto;padding-left:2px}
+  .toolbar .status b{color:var(--wakaba);font-weight:600}
+  .toolbar button{
+    font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:var(--ai);
+    border:none;border-radius:4px;padding:9px 20px;cursor:pointer;
+  }
+  .toolbar button:hover{background:#345c88}
+  .toolbar button.ghost{background:#fff;color:var(--ai);border:1px solid #b9cbdd}
+  .toolbar button.ghost:hover{background:var(--ai-pale)}
+  .toolbar button:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+  /* 説明文の表示・非表示 */
+  body.brief .sub,
+  body.brief section.blk > .desc,
+  ul.items > li.nosub .sub{display:none}
+  body.brief ul.items > li{padding:6px 2px}
+  body.brief .ttl{font-weight:500}
+
+  /* 項目ごとの説明文トグル */
+  button.subtoggle{
+    appearance:none;-webkit-appearance:none;font-family:inherit;
+    border:1px solid #d5d9dd;background:#fff;color:var(--ink-soft);
+    width:20px;height:20px;line-height:1;border-radius:3px;cursor:pointer;
+    font-size:11px;padding:0;margin-left:7px;vertical-align:2px;flex:0 0 auto;
+  }
+  button.subtoggle:hover{border-color:var(--ai);color:var(--ai);background:var(--ai-pale)}
+  button.subtoggle:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
+  body.brief button.subtoggle{display:none}
+  @media print{ button.subtoggle{display:none} }
+
+  /* 編集モード */
+  body.edit .sub{display:block}
+  body.edit button.subtoggle{display:none}
+  body.edit ul.items > li{background:#fcfbf7;padding:11px 8px;border-bottom:1px solid var(--rule)}
+  body.edit .ttl[contenteditable],body.edit .sub[contenteditable]{
+    outline:1px dashed #c3ccd4;outline-offset:3px;border-radius:2px;min-height:1.4em;
+  }
+  body.edit .ttl[contenteditable]:focus,body.edit .sub[contenteditable]:focus{
+    outline:1.5px solid var(--ai);background:#fff;
+  }
+  .rowtools{display:none;flex:0 0 auto;align-items:center;gap:4px}
+  body.edit .rowtools{display:flex}
+  .rowtools button{
+    font-family:inherit;font-size:11px;line-height:1;width:22px;height:22px;padding:0;
+    border:1px solid #d5d9dd;background:#fff;color:var(--ink-mid);border-radius:3px;cursor:pointer;
+  }
+  .rowtools button:hover{border-color:var(--ai);color:var(--ai);background:var(--ai-pale)}
+  .rowtools button.del:hover{border-color:#c05a4a;color:#c05a4a;background:#fceeeb}
+  .rowtools select{
+    font-family:inherit;font-size:11px;padding:2px 3px;border:1px solid #d5d9dd;
+    border-radius:3px;background:#fff;color:var(--ink-mid);max-width:96px;
+  }
+  .addrow{display:none;margin:8px 0 2px}
+  body.edit .addrow{display:block}
+  .addrow button{
+    font-family:inherit;font-size:12px;font-weight:600;color:var(--ai);background:var(--ai-pale);
+    border:1px dashed #a8c0d8;border-radius:3px;padding:6px 14px;cursor:pointer;width:100%;
+  }
+  .addrow button:hover{background:#dfeaf5}
+  .editnote{display:none;background:#fff8e8;border:1px solid #e6d6ac;padding:10px 14px;
+    font-size:12.5px;color:#6b5a2c;margin:0 0 18px;line-height:1.8}
+  body.edit .editnote{display:block}
+  @media print{ .rowtools,.addrow,.editnote{display:none !important} }
+
+  @media(max-width:640px){
+    .sheet{padding:26px 20px 40px}
+    header.doc h1{font-size:23px}
+    .meta div{min-width:100%}
+  }
+  @media print{
+    @page{size:A4;margin:14mm 13mm}
+    /* 濃度は保ちつつ、画面の色味も残す */
+    body{background:#fff;color:#1a2028;font-size:10.5pt;line-height:1.72;
+      -webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .sheet{max-width:none;box-shadow:none;padding:0;background:#fff}
+    .toolbar,button.subtoggle,.rowtools,.addrow,.editnote{display:none !important}
+    section.blk{margin-bottom:18px}
+
+    /* 区分の途中で改ページしてよい。ただし見出しだけが取り残されないようにする */
+    section.blk{break-inside:auto;page-break-inside:auto}
+    section.blk > h2,.grp{break-after:avoid;page-break-after:avoid}
+    section.blk > .desc{break-before:avoid;page-break-before:avoid}
+    ul.items{break-inside:auto;page-break-inside:auto}
+    ul.items > li{break-inside:avoid;page-break-inside:avoid}
+    header.doc{break-after:avoid;page-break-after:avoid}
+
+    /* 見出し */
+    header.doc{border-bottom:2.5pt solid #1a2028}
+    header.doc h1{font-size:20pt;font-weight:700;color:#1a2028}
+    header.doc p.lead{color:#1a2028;font-size:10pt}
+    .eyebrow{color:#2c5b8a;font-weight:700}
+    .office{color:#1a2028;font-weight:700;font-size:11pt}
+    section.blk > h2{font-size:13.5pt;font-weight:700;color:#1a2028;
+      border-bottom:1.2pt solid #2c5b8a;padding-bottom:5px}
+    section.blk > h2 .no{color:#2c5b8a;border:1.2pt solid #2c5b8a;font-weight:700}
+    .grp{color:#2c5b8a;font-weight:700;font-size:10.5pt;border-left:3pt solid #2c5b8a;padding-left:7px}
+
+    /* 本文 */
+    .meta{color:#1a2028;font-size:10pt}
+    .meta div{border-bottom:1pt dotted #8a8578}
+    section.blk > .desc{color:#1a2028;font-size:9.8pt}
+    .ttl{font-weight:700;font-size:10.8pt;color:#1a2028}
+    .sub{color:#242c36;font-size:9.6pt;line-height:1.68}
+    .sub em{color:#9a4f1f;font-weight:700}
+    .sub strong,.desc strong,.intro strong,.closing strong{font-weight:700;color:#1a2028}
+    ul.items > li{border-bottom:0.8pt dotted #9a958a}
+    input.box{border:1.4pt solid #4a525c;width:15px;height:15px}
+
+    /* 枠もの（背景色を印刷） */
+    .intro{background:#eaf1f8;border:none;border-left:4pt solid #2c5b8a;color:#1a2028;font-size:10pt}
+    .intro p.rule{border:1.2pt solid #2c5b8a;background:#fff}
+    .intro h2{font-weight:700;color:#1a2028}
+    .closing{background:#f4f2ec;border:1pt solid #cfc9ba;color:#1a2028}
+    .closing h2{font-weight:700}
+    .memo h2{color:#5c6673;font-weight:700}
+    .memo .lines{border:1pt solid #b8b2a5}
+    table.list th{background:#f2efe8;color:#3d4650;font-weight:700;font-size:9.5pt;border:0.8pt solid #a8a294}
+    table.list td{border:0.8pt solid #a8a294}
+
+    /* 入手先タグは画面と同じ配色を維持し、枠線で判別性を確保 */
+    .tag{font-weight:700;font-size:8.6pt;padding:0 6px;border:0.8pt solid currentColor}
+    .t-home{background:#e4efe5;color:#33593a}
+    .t-city{background:#faeddf;color:#8a4e26}
+    .t-bank{background:#e3edf7;color:#22537f}
+    .t-ask{background:#f0eee9;color:#57503f}
+    .legend{color:#3d4650;font-size:9.5pt}
+
+    footer.doc{color:#1a2028;border-top:2pt solid #1a2028;font-size:9.6pt}
+    footer.doc .fo{font-size:13pt;font-weight:700;color:#1a2028}
+    footer.doc .fr{color:#3d4650}
+  }
+
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="status" id="status"></span>
+  <button type="button" class="ghost" id="toggleSub" onclick="toggleSub()">すべての説明文を隠す</button>
+  <button type="button" class="ghost" id="toggleEdit" onclick="toggleEdit()">項目を編集</button>
+  <button type="button" class="ghost" onclick="saveNow()">一時保存</button>
+  <button type="button" class="ghost" onclick="exportJSON()">JSON出力</button>
+  <button type="button" class="ghost" onclick="document.getElementById('importFile').click()">JSON読込</button>
+  <button type="button" class="ghost" onclick="resetAll()">初期状態に戻す</button>
+  <button type="button" class="ghost" onclick="printSummary()">一覧のみ印刷</button>
+  <button type="button" onclick="window.print()">全体を印刷</button>
+  <input type="file" id="importFile" accept=".json,application/json" hidden onchange="importJSON(this)">
+</div>
+
+<div class="sheet">
+
+  <header class="doc">
+    <div class="headline">
+      <p class="eyebrow">相続税の申告手続き</p>
+      <p class="office mincho">寺尾英司税理士事務所</p>
+    </div>
+    <h1 class="mincho">ご準備いただく書類のご案内</h1>
+    <p class="lead">相続税の申告のために、次の書類をお集めください。<br>
+    すべてが一度に揃わなくても構いません。手元にあるものから順にお預かりします。</p>
+  </header>
+
+  <div class="meta">
+    <div><b>被相続人（お亡くなりになった方）</b>　　　　　　　　　　　　様</div>
+    <div><b>お亡くなりになった日</b>　　　　年　　月　　日</div>
+    <div><b>申告・納税の期限</b>　　　　年　　月　　日</div>
+    <div><b>書類のご提出予定</b>　　　　年　　月　　日ごろ</div>
+  </div>
+
+  <div class="intro">
+    <h2 class="mincho">はじめに</h2>
+    <p>相続税の申告と納税には、お亡くなりになった日の翌日から<strong>10か月</strong>という期限があります。書類集めには思いのほか時間がかかりますので、早めに取りかかっていただけると安心です。</p>
+    <p>「これは必要だろうか」と迷うものは、<strong>捨てずに、そのままお持ちください</strong>。こちらで要・不要を判断します。</p>
+    <p class="rule"><strong>印鑑証明書だけは原本が必要です。それ以外の書類は、すべてコピーで結構です。</strong><br>
+    印鑑証明書の原本は申告書に添付して税務署へ提出するため、<strong>お手元には戻りません</strong>。ご自身で保管される分が必要でしたら、余分に取得しておいてください。通帳など、そのほかに原本をお預かりしたものは申告後にお返しします。</p>
+  </div>
+
+  <div class="editnote">
+    <strong>編集モードです。</strong>書類名・説明文をクリックすると文字を直接書き換えられます。各項目の右のボタンで、入手先タグの変更、説明文の追加（<strong>文</strong>）、並べ替え（▲▼）、削除（×）ができます。説明文のない項目は「文」を押すと追加できます。区分の末尾の「＋ 項目を追加」で行を増やせます。編集内容はこのブラウザに自動保存されます。編集を終えたら「編集を終了」を押してください。
+  </div>
+  <div class="legend">
+    <span class="t">入手先の目安</span>
+    <span class="tag t-home">ご自宅にあるもの</span>
+    <span class="tag t-city">役所で取得</span>
+    <span class="tag t-bank">金融機関・保険会社へ依頼</span>
+    <span class="tag t-ask">ご記入・お聞かせください</span>
+  </div>
+
+  <!-- 1 -->
+  <section class="blk">
+    <h2 class="mincho"><span class="no">1</span>ご家族に関する書類</h2>
+    <p class="desc">誰が相続人になるかを確認するための書類です。まずはここから着手されるのがおすすめです。</p>
+
+    <div class="grp">A　法定相続情報一覧図をお持ちの場合（こちらが簡単です）</div>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">法定相続情報一覧図の写し<span class="tag t-city">法務局で取得</span></div>
+        <div class="sub">相続関係を1枚にまとめた図で、法務局が<strong>無料で、何通でも</strong>交付してくれます。<strong>これをご提出いただければ、下のBの戸籍謄本はいただく必要がありません。</strong>金融機関の手続きでも戸籍の束の代わりに使え、何か所も同時に進められます。<br>
+        <em>お子様の続柄は「子」ではなく「長男」「長女」と記載してもらってください。</em>「子」と書かれたものは相続税の申告に使えず、作り直しになります。<br>
+        ※一覧図を作ってもらうには、下のBの戸籍一式を法務局に提出する必要があります（提出した戸籍は返却されます）。相続放棄をされた方がいる場合は、別途、家庭裁判所の相続放棄申述受理証明書をお願いします。</div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+
+    <div class="grp">B　一覧図がない場合にご準備いただくもの</div>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">故人の戸籍謄本（出生から亡くなるまで、切れ目なくすべて）<span class="tag t-city">役所で取得</span></div>
+        <div class="sub">本籍地の市区町村役場で「相続手続きに使うので、出生から死亡まで続けてほしい」とお伝えください。<em>本籍を移されている場合は、以前の本籍地の役所にも請求が必要です。</em></div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">故人の住民票の除票<span class="tag t-city">役所で取得</span></div>
+        <div class="sub">「本籍を記載したもの」でお願いします。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">相続人全員の戸籍謄本<span class="tag t-city">役所で取得</span></div>
+        <div class="sub">お亡くなりになった日より後に発行されたものが必要です。</div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+
+    <div class="grp">C　どちらの場合もご準備いただくもの</div>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">相続人全員の印鑑証明書　<strong>※原本</strong><span class="tag t-city">役所で取得</span></div>
+        <div class="sub"><strong>この書類だけは原本が必要です（コピー不可）。</strong>遺産の分け方が決まってから使います。<em>申告書に添付して税務署へ提出するため、返却されません。</em>銀行や法務局の手続きにも使いますので、お一人につき3通ほど取得しておかれると安心です。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">相続人全員のマイナンバーカード（または通知カード）と運転免許証などのコピー<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">申告書に添付します。表と裏の両面をコピーしてください。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">遺言書<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">ある場合のみ。<em>封がされた自筆の遺言書は、開封せずにそのままお持ちください。</em>家庭裁判所での手続きが必要です。</div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+  </section>
+
+  <!-- 2 -->
+  <section class="blk">
+    <h2 class="mincho"><span class="no">2</span>生命保険・共済</h2>
+    <p class="desc">保険金を受け取られた分だけでなく、<strong>故人が保険料を払っていた、ご家族名義の保険</strong>も対象になることがあります。</p>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">保険金・共済金の支払通知書（支払明細書）<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">保険会社から送られてくる、金額が書かれた通知です。ニッセイ・JA・新潟県民共済など、受け取られたものすべて。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">故人が保険料を払っていた、ご家族が被保険者の保険<span class="tag t-bank">保険会社へ依頼</span></div>
+        <div class="sub">例：ご主人が保険料を払い、奥様やお子様にかけていた保険。この場合、保険会社に<strong>「解約返戻金相当額証明書」</strong>の発行をご依頼ください。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">入院給付金・手術給付金などを受け取っていた場合の明細<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">亡くなる前の入院分の給付金です。死亡保険金とは扱いが異なります。</div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+  </section>
+
+  <!-- 3 -->
+  <section class="blk">
+    <h2 class="mincho"><span class="no">3</span>預貯金・金融商品</h2>
+    <p class="desc">お取引のあった金融機関ごとに、次の2つをご依頼ください。窓口で<strong>「相続税の申告に使います」</strong>とお伝えいただければ通じます。</p>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">残高証明書<span class="tag t-bank">金融機関へ依頼</span></div>
+        <div class="sub"><strong>お亡くなりになった日の時点</strong>のものをご依頼ください。「その金融機関にあるすべての口座・商品を記載してほしい」とお伝えください。投資信託・国債・出資金なども1枚にまとめてもらえます。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">既経過利息計算書<span class="tag t-bank">金融機関へ依頼</span></div>
+        <div class="sub">定期預金・定期貯金がある場合のみ。残高証明書と一緒にご依頼ください。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">通帳（過去5年分）<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">記帳されているページのコピーをお願いします（原本をお預かりすることもできます）。記帳が飛んでいる期間があれば、金融機関で<strong>取引明細</strong>を出してもらってください。<em>使い切って処分された古い通帳がある場合もお知らせください。</em></div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">ご家族名義の預金で、実際は故人が管理していたもの<span class="tag t-ask">お聞かせください</span></div>
+        <div class="sub">お子様やお孫様の名義でも、故人が入金し通帳や印鑑を管理していた場合は、相続財産に含めて申告する必要があります。該当しそうな口座があれば通帳をお持ちください。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">証券会社の取引残高報告書<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">株式・投資信託をお持ちだった場合。銘柄と数量がわかるものをお願いします。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">貸金庫の有無<span class="tag t-ask">お聞かせください</span></div>
+        <div class="sub">お借りになっていた場合は、中身の確認が必要です。</div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+
+    <div class="grp">ご依頼状況の記録（ご自身の控えとしてお使いください）</div>
+    <table class="list">
+      <thead><tr><th class="n">金融機関</th><th class="c">依頼日</th><th class="c">残高証明</th><th class="c">通帳</th><th>備考</th></tr></thead>
+      <tbody>
+        <tr><td class="n">JA</td><td class="c"></td><td class="c"></td><td class="c"></td><td></td></tr>
+        <tr><td class="n">ゆうちょ銀行・かんぽ生命</td><td class="c"></td><td class="c"></td><td class="c"></td><td></td></tr>
+        <tr><td class="n">第四北越銀行</td><td class="c"></td><td class="c"></td><td class="c"></td><td></td></tr>
+        <tr><td class="n">長岡信用金庫</td><td class="c"></td><td class="c"></td><td class="c"></td><td></td></tr>
+        <tr><td class="n">　</td><td class="c"></td><td class="c"></td><td class="c"></td><td></td></tr>
+        <tr><td class="n">　</td><td class="c"></td><td class="c"></td><td class="c"></td><td></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 4 -->
+  <section class="blk">
+    <h2 class="mincho"><span class="no">4</span>土地・建物</h2>
+    <p class="desc">お持ちの不動産（東町・東が丘など）について、次の書類が必要です。所在する市区町村ごとにご準備ください。</p>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">固定資産税の課税明細書<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">毎年春ごろ、市役所から納税通知書と一緒に届く一覧表です。<strong>お亡くなりになった年度のもの</strong>をお願いします。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">名寄帳（固定資産課税台帳）<span class="tag t-city">役所で取得</span></div>
+        <div class="sub">市役所の資産税課で取得できます。<em>課税明細書に載らない土地（私道など）が見つかることがあるため、こちらもお願いしています。</em></div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">登記事項証明書（登記簿謄本）<span class="tag t-ask">こちらで取得も可</span></div>
+        <div class="sub">法務局で取得します。ご希望があれば当方で手配します。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">賃貸借契約書<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">人に貸している土地・建物、借りている土地がある場合のみ。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">不動産を引き継ぐ方の住民票　<strong>※当事務所へのご提出は不要</strong><span class="tag t-city">役所で取得</span></div>
+        <div class="sub">相続税の申告には使いませんが、<strong>不動産の名義変更（相続登記）に必要</strong>です。登記のお手続きは司法書士へのご依頼となりますので、その際にご準備ください。<em>令和6年4月から相続登記は義務化され、取得を知った日から3年以内に申請しないと過料の対象となります。</em>お心当たりのある司法書士がいらっしゃらなければ、ご紹介します。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">同居されていたご家族・現在お住まいの方<span class="tag t-ask">お聞かせください</span></div>
+        <div class="sub"><strong>ご自宅の土地の評価が最大8割減額される特例</strong>があり、誰が住んでいたか・誰が引き継ぐかで適用が変わります。詳しくお聞かせください。</div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+  </section>
+
+  <!-- 5 -->
+  <section class="blk">
+    <h2 class="mincho"><span class="no">5</span>お車・その他の財産</h2>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">車検証のコピー（フォレスター・キャリイ）<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">車内のダッシュボードに入っていることが多いです。走行距離もお知らせください。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">暗号資産（ビットコインなどの仮想通貨）<span class="tag t-bank">取引所へ依頼</span></div>
+        <div class="sub">お持ちだった場合は、取引所（コインチェック、bitFlyer、GMOコインなど）に<strong>「残高証明書」</strong>をご依頼ください。お亡くなりになった日時点の数量と時価が記載されたものです。<br>
+        <em>取引所からの案内メールや、スマートフォンのアプリが手がかりになります。</em>ご家族が把握していないことが多い財産ですので、パソコンやスマートフォンに取引所からのメールが届いていないか、一度ご確認ください。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">ゴルフ会員権・リゾート会員権の証書<span class="tag t-home">ご自宅にあるもの</span></div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">貴金属・骨董品・美術品など<span class="tag t-ask">お聞かせください</span></div>
+        <div class="sub">1点で30万円を超えそうなものがあればお知らせください。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">未支給年金・高額療養費・還付金などの通知<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">亡くなった後に届く、年金事務所や健康保険からのお知らせです。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">死亡退職金・弔慰金を受け取った場合の明細<span class="tag t-home">ご自宅にあるもの</span></div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">人に貸しているお金がある場合の記録<span class="tag t-ask">お聞かせください</span></div>
+        <div class="sub">借用書やメモ、口座の記録など。</div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+  </section>
+
+  <!-- 6 -->
+  <section class="blk">
+    <h2 class="mincho"><span class="no">6</span>借入金・未払いのもの</h2>
+    <p class="desc">故人が残された借金や未払いのものは、財産から差し引くことができます。<strong>領収書・請求書は捨てずにお取りおきください。</strong></p>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">借入金の残高証明書<span class="tag t-bank">金融機関へ依頼</span></div>
+        <div class="sub">お亡くなりになった日の時点の残高でご依頼ください。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">入院費・治療費の請求書、領収書<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">亡くなった後にお支払いになった分も含みます。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">固定資産税・住民税・国民健康保険料などの通知書<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">まだ納めていない分がある場合。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">電気・水道・電話・クレジットカードの未払い分の明細<span class="tag t-home">ご自宅にあるもの</span></div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+  </section>
+
+  <!-- 7 -->
+  <section class="blk">
+    <h2 class="mincho"><span class="no">7</span>葬儀にかかった費用</h2>
+    <p class="desc">通夜・葬儀・火葬・納骨などの費用も差し引けます。</p>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">葬儀社・火葬場・お寺などの領収書<span class="tag t-home">ご自宅にあるもの</span></div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">お布施・心付けなど、領収書のないもののメモ<span class="tag t-ask">ご記入ください</span></div>
+        <div class="sub">「いつ・どこへ・いくら」の3点をメモしていただければ大丈夫です。<br>
+        <em>※香典返し、初七日・四十九日などの法要費用は差し引けません。</em></div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+  </section>
+
+  <!-- 8 -->
+  <section class="blk">
+    <h2 class="mincho"><span class="no">8</span>生前の贈与について</h2>
+    <p class="desc">お亡くなりになる前に贈与を受けていた場合、その分を相続財産に加えて計算します。<strong>申告漏れが最も起こりやすい部分</strong>ですので、心当たりがあればお知らせください。</p>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">贈与税の申告書の控え<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">過去に贈与税を申告されたことがある場合。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">生前にお金や不動産をもらったことがあるか<span class="tag t-ask">お聞かせください</span></div>
+        <div class="sub">今回のケースでは、お亡くなりになる前<strong>3年以内</strong>のものが対象です。金額が小さくても、また贈与税を払っていなくても対象になります。現金の手渡し、預金口座への振込、学費や生活費の肩代わりなども含まれる場合があります。<br>
+        <em>※制度改正により、令和9年1月1日以後に発生する相続からは対象期間が段階的に延び、最終的に7年以内となります。</em></div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">住宅資金・教育資金・結婚子育て資金の贈与を受けたことがあるか<span class="tag t-ask">お聞かせください</span></div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">「相続時精算課税」を使ったことがあるか<span class="tag t-ask">お聞かせください</span></div>
+        <div class="sub">この制度を使った贈与は、<strong>何年前のものでもすべて</strong>相続財産に加えて計算します（3年以内という区切りがありません）。聞き覚えがない場合は「なし」で構いません。こちらで税務署に確認することもできます。</div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+  </section>
+
+  <!-- 9 -->
+  <section class="blk">
+    <h2 class="mincho"><span class="no">9</span>該当する方のみ</h2>
+    <ul class="items">
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">過去10年以内に、別の相続で財産を受け取ったことがある<span class="tag t-ask">お聞かせください</span></div>
+        <div class="sub">その際の相続税申告書の控えがあればお持ちください。税額が軽減される場合があります。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">相続人の中に未成年の方・障害者手帳をお持ちの方がいる<span class="tag t-ask">お聞かせください</span></div>
+        <div class="sub">障害者手帳のコピーをお願いします。税額が軽減されます。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">故人に事業所得・不動産所得・年金以外の収入があった<span class="tag t-home">ご自宅にあるもの</span></div>
+        <div class="sub">過去3年分の確定申告書の控えをお願いします。別途、<strong>準確定申告</strong>（4か月以内）が必要になる場合があります。</div>
+      </div></li>
+      <li><input type="checkbox" class="box"><div class="body">
+        <div class="ttl">海外に財産がある<span class="tag t-ask">お聞かせください</span></div>
+      </div></li>
+    </ul>
+    <div class="addrow"><button type="button" onclick="addItem(this)">＋ 項目を追加</button></div>
+  </section>
+
+  <div class="closing">
+    <h2 class="mincho">書類集めのポイント</h2>
+    <ul>
+      <li>役所での戸籍の取得は、時間がかかることがあります。<strong>1と4から先に</strong>始めていただくと全体がスムーズです。</li>
+      <li>金融機関での相続手続きは、<strong>窓口で1時間ほど</strong>かかることがあります。事前に電話で予約されると待ち時間が短くなります。</li>
+      <li>原本が必要なのは<strong>印鑑証明書だけ</strong>です。ほかはコピーで結構ですので、原本はお手元に置いておいてください。印鑑証明書は税務署へ提出して返却されないため、多めに取得しておくと安心です。</li>
+      <li>「これは財産に入るのだろうか」と迷うものこそ、お知らせください。後から見つかると訂正の手続きが必要になります。</li>
+    </ul>
+  </div>
+
+  <section class="summary" id="summary">
+    <h2 class="mincho">確認用一覧</h2>
+    <p class="note">ここまでの書類を1枚にまとめました。揃ったものからチェックしてください。上のチェックと連動します。</p>
+    <div class="sumgrid" id="sumgrid"></div>
+  </section>
+
+  <div class="memo">
+    <h2>ご質問・お気づきの点</h2>
+    <div class="lines"></div>
+  </div>
+
+  <footer class="doc">
+    <div>
+      <div class="fo">寺尾英司税理士事務所</div>
+      <div class="fi">
+        <span>〒530-0012　大阪市北区芝田2-3-19　東洋ビル本館215号</span><br>
+        <span>TEL　06-6136-8750</span><span>Mail　zaimu88@tkcnf.or.jp</span>
+      </div>
+    </div>
+    <div class="fr">
+      相続税申告　ご準備書類チェックリスト<br>
+      ご不明な点は、お気軽にお問い合わせください。
+    </div>
+  </footer>
+
+</div>
+<script>
+var LS_KEY='souzoku_checklist_v3', LS_ALL='souzoku_checklist_brief';
+var TAGS=[['','タグなし'],['t-home','ご自宅にあるもの'],['t-city','役所で取得'],['t-bank','金融機関へ依頼'],['t-ask','お聞かせください']];
+var ORIGINAL=[], dirty=false;
+
+function lists(){ return Array.prototype.slice.call(document.querySelectorAll('ul.items')); }
+function boxes(){ return Array.prototype.slice.call(document.querySelectorAll('ul.items input.box')); }
+
+/* 保存用に、操作ボタン類を取り除いたHTMLを作る */
+function cleanHTML(ul){
+  var c=ul.cloneNode(true);
+  c.querySelectorAll('button.subtoggle,.rowtools').forEach(function(e){e.remove();});
+  c.querySelectorAll('[contenteditable]').forEach(function(e){e.removeAttribute('contenteditable');});
+  c.querySelectorAll('input.box').forEach(function(e){e.removeAttribute('checked');});
+  return c.innerHTML;
+}
+function collect(){
+  return {
+    v:1, app:'相続税申告 準備書類チェックリスト',
+    savedAt:new Date().toISOString(),
+    brief:document.body.classList.contains('brief'),
+    lists:lists().map(cleanHTML),
+    checks:boxes().map(function(b){return b.checked;})
+  };
+}
+function apply(data){
+  if(!data||!data.lists) return false;
+  if(data.lists.length!==lists().length && data.lists.length!==ORIGINAL.length) return false;
+  lists().forEach(function(ul,i){ if(data.lists[i]!=null) ul.innerHTML=data.lists[i]; });
+  decorate();
+  if(data.checks) boxes().forEach(function(b,i){ b.checked=!!data.checks[i]; });
+  syncSummary();
+  if(typeof data.brief==='boolean') setBrief(data.brief);
+  setEditable(document.body.classList.contains('edit'));
+  return true;
+}
+function stamp(t,ok){
+  var el=document.getElementById('status'); if(!el) return;
+  el.innerHTML = ok ? '<b>'+t+'</b>' : t;
+}
+function fmt(d){
+  var z=function(x){return ('0'+x).slice(-2);};
+  return d.getFullYear()+'/'+z(d.getMonth()+1)+'/'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes());
+}
+function save(silent){
+  var data=collect();
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    dirty=false;
+    stamp('一時保存しました（'+fmt(new Date(data.savedAt))+'）', !silent);
+  }catch(e){ stamp('保存できませんでした（ブラウザの設定をご確認ください）', false); }
+}
+function saveNow(){ save(false); }
+
+/* JSON出力・読込 */
+function exportJSON(){
+  var data=collect(), d=new Date();
+  var z=function(x){return ('0'+x).slice(-2);};
+  var name='相続チェックリスト_'+d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'.json';
+  var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){URL.revokeObjectURL(a.href);},1000);
+  stamp('「'+name+'」を出力しました', true);
+}
+function importJSON(input){
+  var f=input.files&&input.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){
+    var data;
+    try{ data=JSON.parse(r.result); }catch(e){ alert('読み込めませんでした。JSONファイルをご確認ください。'); input.value=''; return; }
+    if(!confirm('現在の内容を、読み込むファイルの内容で置き換えます。よろしいですか。')){ input.value=''; return; }
+    if(apply(data)){
+      save(true);
+      stamp('「'+f.name+'」を読み込みました', true);
+    }else{
+      alert('このファイルはこのチェックリストの保存形式ではないようです。');
+    }
+    input.value='';
+  };
+  r.readAsText(f);
+}
+
+/* 最終ページの確認用一覧を組み立てる */
+function titleOf(li){
+  var t=li.querySelector('.ttl'); if(!t) return '';
+  var c=t.cloneNode(true);
+  c.querySelectorAll('.tag,button').forEach(function(e){e.remove();});
+  return c.textContent.replace(/\s+/g,' ').replace(/\s*※.*$/,'').trim();
+}
+function buildSummary(){
+  var grid=document.getElementById('sumgrid'); if(!grid) return;
+  grid.innerHTML='';
+  var all=boxes();
+  document.querySelectorAll('section.blk').forEach(function(sec){
+    var h2=sec.querySelector('h2'); if(!h2) return;
+    var blk=document.createElement('div'); blk.className='sumblk';
+    var no=h2.querySelector('.no');
+    var h3=document.createElement('h3');
+    h3.textContent=(no?no.textContent+'　':'')+h2.textContent.replace(no?no.textContent:'','').trim();
+    blk.appendChild(h3);
+    var ul=null, pending=null;
+    Array.prototype.forEach.call(sec.children,function(node){
+      if(node.classList.contains('grp')){
+        pending=node.textContent.trim(); ul=null;
+      }else if(node.tagName==='UL'&&node.classList.contains('items')){
+        if(!node.querySelector(':scope > li')) return;
+        if(pending){
+          var h4=document.createElement('h4'); h4.textContent=pending;
+          blk.appendChild(h4); pending=null;
+        }
+        if(!ul){ ul=document.createElement('ul'); blk.appendChild(ul); }
+        node.querySelectorAll(':scope > li').forEach(function(li){
+          var name=titleOf(li); if(!name) return;
+          var box=li.querySelector('input.box');
+          var idx=all.indexOf(box);
+          var row=document.createElement('li');
+          var cb=document.createElement('input');
+          cb.type='checkbox'; cb.className='box'; cb.checked=!!(box&&box.checked);
+          cb.dataset.i=idx;
+          cb.onchange=function(){
+            var t=boxes()[+cb.dataset.i];
+            if(t) t.checked=cb.checked;
+            save(true);
+          };
+          var sp=document.createElement('span'); sp.textContent=name;
+          row.appendChild(cb); row.appendChild(sp); ul.appendChild(row);
+        });
+      }
+    });
+    if(blk.querySelector('li')) grid.appendChild(blk);
+  });
+}
+function syncSummary(){
+  var all=boxes();
+  document.querySelectorAll('#sumgrid input.box').forEach(function(cb){
+    var t=all[+cb.dataset.i]; if(t) cb.checked=t.checked;
+  });
+}
+
+function decorate(){
+  lists().forEach(function(ul){
+    ul.querySelectorAll(':scope > li').forEach(function(li){
+      var ttl=li.querySelector('.ttl'); if(!ttl) return;
+      if(!li.querySelector('.rowtools')) buildTools(li);
+      var sub=li.querySelector('.sub');
+      if(sub && !ttl.querySelector('button.subtoggle')) buildSubToggle(li,ttl);
+    });
+  });
+  buildSummary();
+}
+function buildSubToggle(li,ttl){
+  var btn=document.createElement('button');
+  btn.type='button'; btn.className='subtoggle';
+  var set=function(){
+    var off=li.classList.contains('nosub');
+    btn.textContent=off?'＋':'－';
+    btn.title=off?'この説明文を表示':'この説明文を隠す';
+    btn.setAttribute('aria-expanded',String(!off));
+  };
+  set();
+  btn.onclick=function(){ li.classList.toggle('nosub'); set(); save(true); };
+  ttl.appendChild(btn);
+}
+function buildTools(li){
+  var box=document.createElement('div'); box.className='rowtools';
+  var sel=document.createElement('select');
+  sel.title='入手先タグ';
+  TAGS.forEach(function(t){ var o=document.createElement('option'); o.value=t[0]; o.textContent=t[1]; sel.appendChild(o); });
+  var cur=li.querySelector('.ttl .tag');
+  sel.value = cur ? (TAGS.filter(function(t){return cur.classList.contains(t[0]);})[0]||[''])[0] : '';
+  sel.onchange=function(){ setTag(li,sel.value); save(true); };
+  var addsub=mk('文','説明文を追加',function(){ addSub(li); });
+  addsub.className='addsub';
+  if(li.querySelector('.sub')) addsub.style.display='none';
+  var up=mk('▲','上へ移動',function(){ var p=li.previousElementSibling; if(p) li.parentNode.insertBefore(li,p); save(true); });
+  var dn=mk('▼','下へ移動',function(){ var nx=li.nextElementSibling; if(nx) li.parentNode.insertBefore(nx,li); save(true); });
+  var del=mk('×','この項目を削除',function(){ if(confirm('この項目を削除します。よろしいですか。')){ li.remove(); save(true); } });
+  del.className='del';
+  box.appendChild(sel); box.appendChild(addsub); box.appendChild(up); box.appendChild(dn); box.appendChild(del);
+  li.appendChild(box);
+}
+function addSub(li){
+  if(li.querySelector('.sub')) return;
+  var body=li.querySelector('.body'); if(!body) return;
+  var div=document.createElement('div');
+  div.className='sub'; div.textContent='説明文をご記入ください。';
+  body.appendChild(div);
+  li.classList.remove('nosub');
+  buildSubToggle(li, li.querySelector('.ttl'));
+  var b=li.querySelector('.rowtools button.addsub'); if(b) b.style.display='none';
+  setEditable(true);
+  div.focus();
+  try{
+    var r=document.createRange(); r.selectNodeContents(div);
+    var sl=window.getSelection(); sl.removeAllRanges(); sl.addRange(r);
+  }catch(e){}
+  save(true);
+}
+function mk(label,title,fn){
+  var b=document.createElement('button'); b.type='button'; b.textContent=label; b.title=title; b.onclick=fn; return b;
+}
+function setTag(li,cls){
+  var ttl=li.querySelector('.ttl'), old=ttl.querySelector('.tag');
+  if(old) old.remove();
+  if(!cls) return;
+  var label=(TAGS.filter(function(t){return t[0]===cls;})[0]||['',''])[1];
+  var sp=document.createElement('span'); sp.className='tag '+cls; sp.textContent=label;
+  var tg=ttl.querySelector('button.subtoggle');
+  if(tg) ttl.insertBefore(sp,tg); else ttl.appendChild(sp);
+}
+
+function addItem(btn){
+  var ul=btn.closest('.addrow').previousElementSibling;
+  while(ul && !(ul.tagName==='UL' && ul.classList.contains('items'))) ul=ul.previousElementSibling;
+  if(!ul) return;
+  var li=document.createElement('li');
+  li.innerHTML='<input type="checkbox" class="box"><div class="body">'+
+    '<div class="ttl">新しい項目</div><div class="sub">説明文をご記入ください。</div></div>';
+  ul.appendChild(li);
+  buildTools(li); buildSubToggle(li,li.querySelector('.ttl'));
+  setEditable(true);
+  li.querySelector('.ttl').focus();
+  document.execCommand&&document.execCommand('selectAll',false,null);
+  save(true);
+}
+
+function setEditable(on){
+  document.querySelectorAll('ul.items .ttl, ul.items .sub').forEach(function(e){
+    if(on) e.setAttribute('contenteditable','true'); else e.removeAttribute('contenteditable');
+  });
+}
+function toggleEdit(){
+  var on=document.body.classList.toggle('edit');
+  setEditable(on);
+  var b=document.getElementById('toggleEdit');
+  b.textContent=on?'編集を終了':'項目を編集';
+  if(on && document.body.classList.contains('brief')) toggleSub();
+  if(!on) save(false);
+}
+
+/* 入力・チェックの変化で自動保存（入力は打鍵が止まってから） */
+var tmr=null;
+document.addEventListener('input',function(e){
+  if(!(e.target.closest&&e.target.closest('ul.items'))) return;
+  dirty=true; stamp('未保存の変更があります', false);
+  clearTimeout(tmr); tmr=setTimeout(function(){ save(true); },1200);
+});
+document.addEventListener('change',function(e){
+  if(!(e.target.classList&&e.target.classList.contains('box'))) return;
+  if(e.target.closest('ul.items')) syncSummary();
+  save(true);
+});
+window.addEventListener('beforeunload',function(e){
+  if(dirty){ save(true); }
+});
+
+function printSummary(){
+  document.body.classList.add('sumonly');
+  var off=function(){ document.body.classList.remove('sumonly'); };
+  if(window.onafterprint!==undefined){ window.addEventListener('afterprint',off,{once:true}); }
+  setTimeout(off,4000);
+  window.print();
+}
+
+function setBrief(on){
+  document.body.classList.toggle('brief',on);
+  var b=document.getElementById('toggleSub');
+  b.textContent=on?'すべての説明文を表示':'すべての説明文を隠す';
+  b.setAttribute('aria-pressed',String(on));
+  try{ localStorage.setItem(LS_ALL, on?'1':'0'); }catch(e){}
+}
+function toggleSub(){ setBrief(!document.body.classList.contains('brief')); }
+
+function resetAll(){
+  if(!confirm('追加・削除・書き換えた内容とチェックをすべて破棄し、最初の状態に戻します。よろしいですか。')) return;
+  lists().forEach(function(ul,i){ ul.innerHTML=ORIGINAL[i]; });
+  try{ localStorage.removeItem(LS_KEY); }catch(e){}
+  decorate();
+  boxes().forEach(function(b){ b.checked=false; });
+  syncSummary();
+  setEditable(document.body.classList.contains('edit'));
+  stamp('初期状態に戻しました', true);
+}
+
+(function init(){
+  ORIGINAL=lists().map(function(ul){ return ul.innerHTML; });
+  var data=null;
+  try{ data=JSON.parse(localStorage.getItem(LS_KEY)||'null'); }catch(e){}
+  if(data && apply(data)){
+    stamp('前回の保存内容を読み込みました（'+fmt(new Date(data.savedAt))+'）', false);
+  }else{
+    decorate();
+    try{ if(localStorage.getItem(LS_ALL)==='1') setBrief(true); }catch(e){}
+    stamp('', false);
+  }
+})();
+</script>
+</body>
+</html>

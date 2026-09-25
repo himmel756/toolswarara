@@ -1,0 +1,1802 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>儲けのカーナビ｜弥生データ読込ツール（たたき台）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#EEF4F2; --surface:#FFFFFF; --surface-2:#F6FAF8;
+    --ink:#173A33; --ink-soft:#4E6A63; --hair:#DCE9E4;
+    --navi:#00A887; --navi-deep:#017A63; --navi-tint:#E3F5EF;
+    --amber:#FFB02E; --amber-tint:#FFF3DC;
+    --profit:#0E9F6E; --loss:#E0594E; --loss-tint:#FCEBE9;
+    /* 月次の推移グラフの系列色（役割ごとに1色・色覚多様性を検証済み） */
+    --c-sales:#2A78D6; --c-sales-soft:#A8C8EE; --c-sales-tint:#EAF2FC;
+    --c-profit:#0E9F6E; --c-profit-soft:#93DBC1; --c-profit-ink:#0B7E58;
+    --c-loss:#E0594E;   --c-loss-soft:#EFA9A2;  --c-loss-ink:#C8412F;
+    --shadow:0 1px 2px rgba(20,60,52,.04), 0 8px 24px rgba(20,60,52,.07);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:radial-gradient(1200px 480px at 88% -10%, var(--navi-tint), transparent 60%), var(--bg);
+    color:var(--ink);
+    font-family:"Noto Sans JP",-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+    font-feature-settings:"palt"; line-height:1.6; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  .wrap{max-width:1480px;margin:0 auto;padding:22px clamp(14px,3vw,40px) 64px}
+  .num{font-variant-numeric:tabular-nums;letter-spacing:.01em}
+
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:13px}
+  .mark{width:46px;height:46px;border-radius:14px;flex:none;background:linear-gradient(135deg,var(--navi),var(--navi-deep));display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,168,135,.32)}
+  .mark svg{width:26px;height:26px}
+  .brand h1{font-size:21px;font-weight:900;margin:0;letter-spacing:.02em}
+  .brand p{margin:1px 0 0;font-size:12.5px;color:var(--ink-soft);font-weight:500}
+  .meta{text-align:right;font-size:12.5px;color:var(--ink-soft);line-height:1.5}
+  .meta b{color:var(--ink);font-weight:700}
+  .meta .meta-mn{color:var(--navi-deep);font-weight:700;margin-left:4px}
+  .unit-toggle{display:inline-flex;background:var(--surface);border:1px solid var(--hair);border-radius:999px;padding:3px;margin-top:6px;box-shadow:var(--shadow)}
+  .unit-toggle button{border:0;background:transparent;font:inherit;font-size:12px;font-weight:700;color:var(--ink-soft);padding:4px 13px;border-radius:999px;cursor:pointer}
+  .unit-toggle button[aria-pressed="true"]{background:var(--navi);color:#fff}
+
+  .intro{background:var(--surface);border:1px solid var(--hair);border-radius:20px;padding:26px;box-shadow:var(--shadow)}
+  .intro .lead{font-size:15px;color:var(--ink-soft);max-width:62ch;margin:0 0 18px}
+  .intro .lead b{color:var(--ink)}
+  .drop{border:2px dashed var(--hair);border-radius:16px;background:var(--surface-2);padding:34px 22px;text-align:center;transition:.18s;cursor:pointer}
+  .drop.hot{border-color:var(--navi);background:var(--navi-tint)}
+  .drop .big{font-size:16px;font-weight:800;margin:8px 0 4px}
+  .drop .sub{font-size:12.5px;color:var(--ink-soft)}
+  .drop .files{font-size:12px;color:var(--ink-soft);margin-top:8px}
+  .btn{appearance:none;border:0;font:inherit;font-weight:800;cursor:pointer;border-radius:11px;padding:11px 20px;font-size:14px}
+  .btn-navi{background:var(--navi);color:#fff;box-shadow:0 6px 16px rgba(0,168,135,.28)}
+  .btn-navi:hover{background:var(--navi-deep)}
+  .btn-ghost{background:transparent;color:var(--navi-deep);border:1.5px solid var(--hair)}
+  .btn-ghost:hover{border-color:var(--navi);background:var(--navi-tint)}
+  .btn-sm{padding:7px 13px;font-size:12.5px;border-radius:9px}
+  .row-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;align-items:center}
+  .hint{font-size:11.5px;color:var(--ink-soft)}
+  .privacy{margin-top:16px;font-size:11.5px;color:var(--ink-soft);display:flex;gap:7px;align-items:flex-start}
+  .privacy svg{flex:none;margin-top:2px}
+  .err{display:none;margin-top:14px;background:var(--loss-tint);color:#9a3026;border:1px solid #f3c8c3;border-radius:11px;padding:11px 14px;font-size:13px;font-weight:600}
+
+  #dash{display:none}
+  .section-title{display:flex;align-items:center;gap:9px;margin:26px 2px 12px;flex-wrap:wrap}
+  .section-title .no{font-size:12px;font-weight:900;color:var(--navi);background:var(--navi-tint);border-radius:7px;padding:2px 8px}
+  .section-title h2{font-size:15px;font-weight:800;margin:0}
+  .section-title .tail{margin-left:auto;font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:10px}
+  .sec.is-hidden{display:none!important}
+  .view-bar{display:none;align-items:center;gap:12px;flex-wrap:wrap;margin:0 2px 14px}
+  .view-summary{font-size:12px;color:#8a5800;font-weight:700;background:var(--amber-tint);border-radius:999px;padding:3px 11px}
+  .view-panel{display:none;background:var(--surface);border:1px solid var(--hair);border-radius:18px;box-shadow:var(--shadow);padding:18px;margin-bottom:16px}
+  .view-panel.open{display:block}
+  .view-panel h3{margin:0 0 4px;font-size:14px}
+  .view-panel .desc{font-size:12px;color:var(--ink-soft);margin:0 0 12px}
+  .view-tbl{border-collapse:collapse;width:100%;min-width:0;font-size:12.5px}
+  .view-tbl td{padding:0;border-bottom:1px solid var(--hair);text-align:left;white-space:normal}
+  .view-tbl tr.grp td{background:var(--surface-2);font-weight:800;color:var(--ink-soft);font-size:11.5px;padding:6px 11px;letter-spacing:.02em}
+  .view-tbl tr[data-sec],.view-tbl tr[data-item]{cursor:pointer}
+  .view-tbl tr[data-sec]:hover,.view-tbl tr[data-item]:hover{background:var(--navi-tint)}
+  .view-tbl tr.off .n{color:var(--ink-soft);text-decoration:line-through}
+  .view-tbl tr.off .d{color:#B8C9C3}
+  .view-tbl td.c{width:40px;padding:8px 0 8px 11px}
+  .view-tbl td.n{font-weight:700;padding:8px 10px 8px 0;width:40%}
+  .view-tbl td.d{color:var(--ink-soft);font-size:11.5px;padding:8px 11px 8px 0}
+  .view-tbl .cb{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:6px;border:1.5px solid var(--hair);background:#fff;color:#fff;font-size:12px;font-weight:900;line-height:1}
+  .view-tbl .cb.on{background:var(--navi);border-color:var(--navi)}
+  .view-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:13px}
+
+  .cockpit{display:grid;grid-template-columns:300px 1fr;gap:16px}
+  @media(max-width:760px){.cockpit{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--hair);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+  .gauge-card{display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gauge-card .glabel{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin-bottom:2px}
+  .gauge-val{font-size:34px;font-weight:900;line-height:1;margin-top:6px}
+  .gauge-sub{font-size:11.5px;color:var(--ink-soft);margin-top:5px}
+  .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:520px){.kpis{grid-template-columns:1fr}}
+  .kpi .k-top{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--ink-soft)}
+  .dot{width:9px;height:9px;border-radius:3px;flex:none}
+  .kpi .k-val{font-size:27px;font-weight:900;margin-top:7px;line-height:1.1}
+  .kpi .k-val .u{font-size:.52em;font-weight:800;margin-left:3px;color:var(--ink-soft);letter-spacing:.02em}
+  .unit-chip{display:inline-block;font-size:11px;font-weight:800;color:var(--navi-deep);background:var(--navi-tint);border-radius:999px;padding:2px 9px;letter-spacing:.02em}
+  th .th-u{font-weight:700;color:var(--navi-deep);font-size:10.5px;margin-left:3px}
+  .kpi .k-foot{font-size:11.5px;color:var(--ink-soft);margin-top:4px}
+
+  .chart-card{padding:18px 18px 8px}
+  .legend{display:flex;gap:16px;font-size:11.5px;color:var(--ink-soft);font-weight:600;margin:2px 2px 6px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+  .tbl-wrap{overflow:auto;border-radius:18px;border:1px solid var(--hair);box-shadow:var(--shadow);background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:760px}
+  th,td{padding:9px 11px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--hair)}
+  thead th{position:sticky;top:0;background:var(--surface-2);font-weight:800;color:var(--ink-soft);font-size:11.5px;z-index:1}
+  tbody th{text-align:left;font-weight:700;background:var(--surface);position:sticky;left:0;z-index:1}
+  th.lead-col,td.lead-col{text-align:left;position:sticky;left:0;background:var(--surface)}
+  thead th.lead-col{background:var(--surface-2)}
+  .col-sum{background:var(--navi-tint)!important;color:var(--navi-deep);font-weight:800}
+  .col-year{background:var(--amber-tint)!important;color:#8a5800;font-weight:800}
+  tbody tr:hover td:not(.col-sum):not(.col-year){background:var(--surface-2)}
+  tbody tr.is-ratio th,tbody tr.is-ratio td{background:var(--surface-2)}
+  tbody tr.is-ratio:hover td:not(.col-sum):not(.col-year){background:#eef5f2}
+  .neg{color:var(--loss);font-weight:700}.pos{color:var(--ink)}.rate{color:var(--navi-deep);font-weight:700}
+  .footnote{font-size:11px;color:var(--ink-soft);margin:10px 4px 0}
+  .reset{margin-top:24px;text-align:center}
+
+  #cfSection{display:none}
+  .cf-open{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:12px 16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .cf-open-label{font-size:12px;font-weight:800;color:var(--ink-soft)}
+  .cf-open label{font-size:12.5px;font-weight:700;color:var(--ink);display:inline-flex;align-items:center;gap:7px}
+  .cf-open input{border:1px solid var(--hair);border-radius:9px;padding:7px 10px;font:inherit;font-size:13px;width:150px;text-align:right;font-variant-numeric:tabular-nums}
+  .cf-open input:focus{outline:2px solid var(--navi-tint);border-color:var(--navi)}
+  .cf-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:16px;margin-bottom:14px}
+  .cf-open .cf-unit{font-size:11.5px;font-weight:800;color:var(--navi-deep);background:var(--navi-tint);border-radius:999px;padding:3px 10px}
+  .cf-open .cf-auto{font-size:11.5px;font-weight:700;color:var(--navi-deep)}
+  .cf-mode{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:0 2px 12px}
+  .cf-mode .unit-toggle{margin-top:0}
+  .cf-mode .unit-toggle button{padding:5px 14px;font-size:12.5px}
+  .cf-config{display:none;background:var(--surface);border:1px solid var(--hair);border-radius:16px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+  .cf-config.open{display:block}
+  .cf-config h3{margin:0 0 4px;font-size:14px}
+  .cf-config .desc{font-size:12px;color:var(--ink-soft);margin:0 0 14px}
+  .cfg-row{display:flex;flex-wrap:wrap;align-items:flex-start;gap:9px 12px;padding:11px 0;border-top:1px solid var(--hair)}
+  .cfg-row:first-of-type{border-top:0;padding-top:0}
+  .cfg-lb{flex:0 0 132px;font-size:12.5px;font-weight:800;color:var(--ink-soft);padding-top:5px}
+  .cfg-body{flex:1;min-width:240px;display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+  .cfg-body .hint{flex-basis:100%;margin:0}
+  .cfg-body input[type=text]{border:1px solid var(--hair);border-radius:9px;padding:6px 10px;font:inherit;font-size:13px;width:130px;text-align:right;font-variant-numeric:tabular-nums}
+  .cfg-body input[type=text]:focus{outline:2px solid var(--navi-tint);border-color:var(--navi)}
+  .cfg-body label.rd{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;cursor:pointer}
+  .acc-chips{display:flex;flex-wrap:wrap;gap:6px;max-height:132px;overflow:auto;width:100%}
+  .acc-chip{border:1.5px solid var(--hair);background:var(--surface-2);color:var(--ink-soft);font-weight:700;font-size:11.5px;border-radius:999px;padding:4px 11px;cursor:pointer}
+  .acc-chip:hover{border-color:var(--navi)}
+  .acc-chip.on{background:var(--navi);border-color:var(--navi);color:#fff}
+  @media(max-width:620px){.cf-cards{grid-template-columns:1fr}}
+  tbody tr.cf-sub th,tbody tr.cf-sub td{background:var(--navi-tint)!important;color:var(--navi-deep);font-weight:800}
+  tbody tr.cf-carry th,tbody tr.cf-carry td{background:var(--surface-2)}
+
+  /* ── editor ── */
+  .link-btn{background:none;border:0;font:inherit;font-weight:800;color:var(--navi-deep);cursor:pointer;font-size:12.5px;display:inline-flex;align-items:center;gap:5px}
+  .link-btn:hover{text-decoration:underline}
+  .editor{display:none;background:var(--surface);border:1px solid var(--hair);border-radius:18px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+  .editor.open{display:block}
+  .editor h3{margin:0 0 4px;font-size:14px}
+  .editor .desc{font-size:12px;color:var(--ink-soft);margin:0 0 14px}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center}
+  .chip{border:1.5px solid var(--hair);background:var(--surface-2);color:var(--navi-deep);font-weight:800;font-size:12px;border-radius:999px;padding:6px 13px;cursor:pointer}
+  .chip:hover{border-color:var(--navi);background:var(--navi-tint)}
+  .preset-label{font-size:11.5px;color:var(--ink-soft);font-weight:700;margin-right:2px}
+  .item-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .item{display:flex;align-items:center;gap:10px;border:1px solid var(--hair);border-radius:12px;padding:9px 12px;background:var(--surface-2)}
+  .item .ord{display:flex;flex-direction:column;gap:2px}
+  .item .ord button{width:22px;height:18px;border:1px solid var(--hair);background:#fff;border-radius:5px;cursor:pointer;line-height:1;font-size:10px;color:var(--ink-soft);padding:0}
+  .item .ord button:hover{border-color:var(--navi);color:var(--navi-deep)}
+  .item .ord button:disabled{opacity:.3;cursor:default}
+  .item .nm{font-weight:800;font-size:13.5px}
+  .item .badge{font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 7px}
+  .badge.b-val{background:var(--navi-tint);color:var(--navi-deep)}
+  .badge.b-rate{background:var(--amber-tint);color:#8a5800}
+  .item .src{font-size:11.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .sp{flex:1}
+  .item .act{display:flex;gap:6px}
+  .item .act button{border:1px solid var(--hair);background:#fff;border-radius:8px;font-size:11.5px;font-weight:700;padding:5px 9px;cursor:pointer;color:var(--ink-soft)}
+  .item .act button:hover{border-color:var(--navi);color:var(--navi-deep)}
+  .item .act button.del:hover{border-color:var(--loss);color:var(--loss)}
+  .item .act button.vis{padding:5px 8px}
+  .item.hidden-item{opacity:.5}
+  .badge.b-hidden{background:#ECEFEE;color:#7A8C87}
+
+  .profile-bar{display:none;align-items:center;gap:10px 12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:10px 16px;box-shadow:var(--shadow);margin-bottom:18px;font-size:13px}
+  .profile-bar .pb-co{font-weight:700;color:var(--ink-soft)}
+  .profile-bar .pb-co b{color:var(--ink)}
+  .profile-bar .sp{flex:1}
+  .status-pill{font-size:11.5px;font-weight:800;border-radius:999px;padding:3px 11px}
+  .status-pill.saved{background:var(--navi-tint);color:var(--navi-deep)}
+  .status-pill.unsaved{background:var(--amber-tint);color:#8a5800}
+  .pb-warn{font-size:11.5px;color:#8a5800;font-weight:600}
+  .profile-box{border:1px solid var(--hair);border-radius:14px;background:var(--surface-2);padding:12px 14px;margin-bottom:14px}
+  .profile-box .pb-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .profile-box .pb-head strong{font-size:13px}
+  .pb-list{display:flex;flex-direction:column;gap:7px}
+  .pb-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--hair);border-radius:10px;padding:7px 11px;font-size:12.5px}
+  .pb-row .pb-name{font-weight:800}.pb-row .pb-date{color:var(--ink-soft);font-size:11px}.pb-row .sp{flex:1}
+  .pb-row button{border:1px solid var(--hair);background:#fff;border-radius:8px;font:inherit;font-size:11.5px;font-weight:700;padding:5px 10px;cursor:pointer;color:var(--ink-soft)}
+  .pb-row button:hover{border-color:var(--navi);color:var(--navi-deep)}
+  .pb-row button.del:hover{border-color:var(--loss);color:var(--loss)}
+  .pb-empty{font-size:12px;color:var(--ink-soft)}
+  .saved-box{margin-top:18px;border:1px solid var(--hair);border-radius:16px;background:var(--surface-2);padding:14px 16px}
+  .saved-box .sb-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+  .saved-box .sb-head strong{font-size:13.5px}
+  .sb-list{display:flex;flex-direction:column;gap:7px}
+  .sb-row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--hair);border-radius:11px;padding:8px 12px;font-size:12.5px}
+  .sb-open{flex:1;min-width:0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border:0;background:none;font:inherit;text-align:left;cursor:pointer;padding:2px 0}
+  .sb-open .sb-co{font-weight:800;color:var(--ink)}
+  .sb-open .sb-pe{font-size:11.5px;color:var(--ink-soft)}
+  .sb-open:hover .sb-co{color:var(--navi-deep);text-decoration:underline}
+  .sb-date{font-size:11px;color:var(--ink-soft);white-space:nowrap}
+  .sb-row .sb-del{border:1px solid var(--hair);background:#fff;border-radius:8px;font:inherit;font-size:11.5px;font-weight:700;padding:5px 10px;cursor:pointer;color:var(--ink-soft)}
+  .sb-row .sb-del:hover{border-color:var(--loss);color:var(--loss)}
+  .profile-bar .pb-pe{font-weight:500;color:var(--ink-soft);margin-left:8px;font-size:11.5px}
+
+  tbody tr.is-subtotal th,tbody tr.is-subtotal td{background:#EAF4F0!important;font-weight:800}
+  tbody tr.is-subtotal th.lead-col{color:var(--navi-deep)}
+  tbody tr.is-subtotal td{border-top:1.5px solid var(--navi)}
+  tbody tr.is-subtotal td.col-sum{background:var(--navi-tint)!important}
+  tbody tr.is-subtotal td.col-year{background:var(--amber-tint)!important}
+  .col-toggle{display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--hair);border-radius:12px;padding:9px 14px;box-shadow:var(--shadow);margin-bottom:12px}
+  .col-toggle .ct-label{font-size:11.5px;font-weight:800;color:var(--ink-soft);margin-right:2px}
+  .mchip{border:1.5px solid var(--hair);background:#fff;color:var(--ink-soft);font:inherit;font-size:11.5px;font-weight:700;border-radius:8px;padding:4px 10px;cursor:pointer}
+  .mchip.on{background:var(--navi);color:#fff;border-color:var(--navi)}
+  .mchip.off{opacity:.55;text-decoration:line-through}
+  .col-toggle .ct-link{margin-left:auto}
+  .ct-sep{width:1px;height:18px;background:var(--hair);margin:0 4px}
+
+  .kpi-picker{display:none;background:var(--surface);border:1px solid var(--hair);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:14px}
+  .kpi-picker.open{display:block}
+  .kpi-picker .kp-desc{font-size:12px;color:var(--ink-soft);margin:0 0 10px}
+  .kpi-group{margin-bottom:10px}
+  .kpi-group .kg-label{font-size:10.5px;font-weight:900;color:var(--ink-soft);letter-spacing:.04em;margin-bottom:6px}
+  .kpi-opts{display:flex;flex-wrap:wrap;gap:7px}
+  .kpi-opt{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--hair);background:var(--surface-2);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--ink-soft);cursor:pointer;user-select:none}
+  .kpi-opt.on{background:var(--navi-tint);border-color:var(--navi);color:var(--navi-deep)}
+  .kpi-opt .chk{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--hair);display:inline-grid;place-items:center;font-size:10px;color:#fff}
+  .kpi-opt.on .chk{background:var(--navi);border-color:var(--navi)}
+  .kpi .k-sub{font-size:11px;color:var(--ink-soft);margin-top:2px}
+
+  .plan-editor{display:none;background:var(--surface);border:1px solid var(--hair);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:12px}
+  .plan-editor.open{display:block}
+  .plan-editor .pl-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+  .plan-editor .pl-head strong{font-size:13px}
+  .pl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+  .pl-row{display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--hair);border-radius:10px;padding:6px 11px}
+  .pl-row span{flex:1;font-weight:700;font-size:12.5px}
+  .pl-row input{width:120px;text-align:right;border:1px solid var(--hair);border-radius:8px;padding:6px 9px;font:inherit;font-size:12.5px;font-variant-numeric:tabular-nums}
+  .pl-row input:focus{outline:2px solid var(--navi-tint);border-color:var(--navi)}
+  #planTbl td.pos-rate,#planTbl td.neg-rate{font-weight:800}
+  td.pos-rate{color:var(--profit)}
+  td.neg-rate{color:var(--loss)}
+
+  #printHeader{display:none}
+  @media print{
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    body{background:#fff!important}
+    .wrap{max-width:none;padding:0}
+    .topbar,#intro,.profile-bar,.view-bar,.view-panel,.cf-mode,.cf-config,.col-toggle,.kpi-picker,.plan-editor,#editor,.reset,.cf-open,#editToggle,#printBtn,#saveBtn{display:none!important}
+    .section-title .tail .link-btn{display:none!important}
+    .section-title .tail span{font-size:calc(10px*var(--pf,1))!important}
+    #printHeader{display:block;margin-bottom:7px;border-bottom:2px solid var(--navi);padding-bottom:6px}
+    #printHeader .ph-title{font-size:calc(19px*var(--pf,1));font-weight:900}
+    #printHeader .ph-sub{font-size:calc(11.5px*var(--pf,1));color:var(--ink-soft);margin-top:2px}
+    .card,.tbl-wrap,.chart-card{box-shadow:none!important;border-color:#d6e4df!important}
+    .cockpit,.card,.tbl-wrap,.chart-card,table,tr{break-inside:avoid}
+    #planSection.plan-empty{display:none!important}
+    .section-title{break-after:avoid;margin:6px 0 3px}
+    .section-title h2{font-size:calc(15px*var(--pf,1))}
+    .section-title .no{font-size:calc(11px*var(--pf,1));padding:2px 7px;print-color-adjust:exact}
+    .tbl-wrap{overflow:visible!important;margin-bottom:4px}
+    table{min-width:0!important;font-size:calc(11px*var(--pf,1));width:100%}
+    th,td{padding:calc(2.6px*var(--pf,1)) calc(6px*var(--pf,1))!important}
+    thead th,tbody th,th.lead-col,td.lead-col{position:static!important}
+    .cockpit{grid-template-columns:200px 1fr;gap:10px}
+    .card{padding:calc(9px*var(--pf,1))!important;border-radius:8px!important}
+    #gauge{width:calc(150px*var(--pf,1))!important}
+    .gauge-val{font-size:calc(25px*var(--pf,1))!important}.gauge-card .glabel{font-size:calc(11px*var(--pf,1))!important}.gauge-sub{font-size:calc(9px*var(--pf,1))!important}
+    .kpis{grid-template-columns:repeat(2,1fr)!important;gap:9px!important}
+    body.print-landscape .kpis{grid-template-columns:repeat(3,1fr)!important}
+    .kpi .k-top{font-size:calc(10.5px*var(--pf,1))!important}.kpi .k-val{font-size:calc(20px*var(--pf,1))!important;margin-top:2px!important}.kpi .k-sub,.kpi .k-foot{font-size:calc(8.5px*var(--pf,1))!important}
+    .chart-card{padding:7px 10px 0!important}
+    .legend{font-size:calc(10px*var(--pf,1))!important;margin:0 0 2px!important}
+    #chart,#cfChart{width:100%!important;height:auto!important;max-height:none!important}
+    .cf-cards{gap:9px!important;margin-bottom:6px!important}
+    .footnote{font-size:calc(8.5px*var(--pf,1));margin:2px 2px 0}
+    svg{max-width:100%}
+  }
+  .editor-foot{display:flex;gap:10px;flex-wrap:wrap;align-items:center;border-top:1px dashed var(--hair);padding-top:12px;margin-top:4px}
+
+  .form{border:1px solid var(--navi);border-radius:14px;padding:16px;background:#fff;margin-bottom:12px}
+  .tabs{display:flex;gap:6px;margin-bottom:14px}
+  .tabs button{flex:1;border:1px solid var(--hair);background:var(--surface-2);font:inherit;font-weight:800;font-size:12.5px;padding:8px;border-radius:9px;cursor:pointer;color:var(--ink-soft)}
+  .tabs button[aria-selected="true"]{background:var(--navi);color:#fff;border-color:var(--navi)}
+  .fld{margin-bottom:12px}
+  .fld label{display:block;font-size:11.5px;font-weight:800;color:var(--ink-soft);margin-bottom:5px}
+  .fld input[type=text],.fld select{width:100%;border:1px solid var(--hair);border-radius:9px;padding:8px 10px;font:inherit;font-size:13px;background:#fff;color:var(--ink)}
+  .fld input[type=text]:focus,.fld select:focus{outline:2px solid var(--navi-tint);border-color:var(--navi)}
+  .radio-row{display:flex;gap:14px;flex-wrap:wrap}
+  .radio-row label{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px;color:var(--ink);cursor:pointer}
+  .picker{border:1px solid var(--hair);border-radius:10px;background:var(--surface-2);max-height:230px;overflow:auto;padding:6px}
+  .picker .sec{font-size:10.5px;font-weight:900;color:var(--ink-soft);letter-spacing:.04em;padding:8px 8px 4px;position:sticky;top:0;background:var(--surface-2)}
+  .picker .opt{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;cursor:pointer;font-size:12.5px}
+  .picker .opt:hover{background:#fff}
+  .picker .opt input{accent-color:var(--navi)}
+  .picker .opt .amt{margin-left:auto;color:var(--ink-soft);font-variant-numeric:tabular-nums;font-size:11.5px}
+  .picker-search{width:100%;border:1px solid var(--hair);border-radius:9px;padding:7px 10px;font:inherit;font-size:12.5px;margin-bottom:7px}
+  .sum-preview{font-size:12px;color:var(--navi-deep);font-weight:800;margin-top:8px}
+  .form-actions{display:flex;gap:9px;margin-top:6px}
+  .src-box{display:none}.src-box.show{display:block}
+</style>
+<style id="pageStyle">@page{size:A3 portrait;margin:9mm}</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2l8 4-8 16-8-16 8-4z" fill="#fff" opacity=".95"/><circle cx="12" cy="9" r="2.4" fill="#017A63"/></svg></div>
+      <div><h1>儲けのカーナビ</h1><p>弥生「残高試算表（年間推移）」を読み込んで、月次の経営ダッシュボードに</p></div>
+    </div>
+    <div class="meta" id="meta">
+      <div id="metaCompany">— 事業所未読込 —</div>
+      <div id="metaPeriod">対象期間：—</div>
+      <div class="unit-toggle" role="group" aria-label="表示単位">
+        <button id="uYen" aria-pressed="false">円</button>
+        <button id="uK" aria-pressed="true">千円</button>
+        <button id="uM" aria-pressed="false">百万円</button>
+      </div>
+      <div style="margin-top:8px">
+        <button id="saveBtn" class="btn btn-navi btn-sm" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+          表示形式を登録
+        </button>
+        <button id="printBtn" class="btn btn-ghost btn-sm" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:4px"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8" rx="1"/></svg>
+          印刷 / PDF保存
+        </button>
+        <span class="unit-toggle" id="orientToggle" role="group" aria-label="印刷の向き" style="display:none;margin-left:6px">
+          <button id="oPortrait" aria-pressed="true">縦</button>
+          <button id="oLandscape" aria-pressed="false">横</button>
+        </span>
+        <span class="unit-toggle" id="fsToggle" role="group" aria-label="印刷の文字サイズ" style="display:none;margin-left:6px">
+          <button id="fsS" aria-pressed="true">標準</button>
+          <button id="fsM" aria-pressed="false">大</button>
+          <button id="fsL" aria-pressed="false">特大</button>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <section class="intro" id="intro">
+    <p class="lead">弥生会計で <b>［集計］→残高試算表（年間推移）</b> を表示し、<b>Excelに書き出し</b>たファイル（PL・BSが1ブックに入ったもの）をそのまま読み込めます。決算月が何月始まりでも自動で判定します。</p>
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="ファイルを選択">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#00A887" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M12 4l-4 4M12 4l4 4"/><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      <div class="big">弥生の Excel ファイルをドロップ</div>
+      <div class="sub">または クリックして選択（.xlsx / .xls）　※書き出した .json も同じ場所に戻せます</div>
+      <div class="files" id="dropFiles"></div>
+    </div>
+    <input type="file" id="file" accept=".xlsx,.xls,.json" hidden>
+    <div class="row-actions">
+      <button class="btn btn-ghost" id="sampleBtn">サンプルデータで動きを見る</button>
+      <span class="hint">※ 手元のファイルが無くても、内蔵サンプルで画面を確認できます。</span>
+    </div>
+    <div class="privacy">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4E6A63" stroke-width="1.8"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z"/></svg>
+      <span>読み込んだデータは外部に送信されません。処理はすべてこのブラウザ内で行われ、保存もこのPCのブラウザ内だけです（下の一覧からいつでも削除できます）。</span>
+    </div>
+    <div class="err" id="err"></div>
+
+    <div class="saved-box" id="savedBox" style="display:none">
+      <div class="sb-head">
+        <strong>このPCに保存されているデータ</strong>
+        <span class="hint" id="savedNote"></span>
+        <span style="flex:1"></span>
+        <button class="link-btn" id="clearAllBtn">すべて削除</button>
+      </div>
+      <div class="sb-list" id="savedList"></div>
+      <p class="hint" style="margin:9px 2px 0">法人名をクリックすると、そのときの表示設定ごと開きます。保存先はこのPCのブラウザ内だけです。</p>
+    </div>
+  </section>
+
+  <section id="dash">
+    <div id="printHeader"></div>
+    <div class="profile-bar" id="profileBar"></div>
+    <div class="view-bar" id="viewBar">
+      <button class="link-btn" id="viewToggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1.2 1.2L7.5 4.8"/><path d="M4 12l1.2 1.2L7.5 10.8"/><path d="M4 18l1.2 1.2L7.5 16.8"/></svg>表示する項目を選ぶ</button>
+      <span class="view-summary" id="viewSummary"></span>
+    </div>
+    <div class="view-panel" id="viewPanel"></div>
+    <section class="sec" id="sec-cockpit">
+    <div class="section-title"><span class="no">01</span><h2>コックピット</h2><span class="tail"><span id="cockpitTail"></span><button class="link-btn" id="kpiToggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>指標を選ぶ</button></span></div>
+    <div class="kpi-picker" id="kpiPicker"></div>
+    <div class="cockpit">
+      <div class="card gauge-card">
+        <div class="glabel">売上高営業利益率</div>
+        <svg id="gauge" viewBox="0 0 220 138" width="240" style="max-width:100%"></svg>
+        <div class="gauge-val num" id="gaugeVal">—</div>
+        <div class="gauge-sub" id="gaugeSub"></div>
+      </div>
+      <div class="kpis" id="kpiGrid"></div>
+    </div>
+    </section>
+
+    <section class="sec" id="sec-plan">
+    <section id="planSection">
+    <div class="section-title"><span class="no">02</span><h2>計画対比</h2><span class="tail"><span id="planUnit"></span><button class="link-btn" id="planToggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-3l11-11 3 3L7 21H4z"/><path d="M14 7l3 3"/></svg>計画予算を入力</button></span></div>
+    <div class="plan-editor" id="planEditor"></div>
+    <div class="tbl-wrap" id="planWrap"><table id="planTbl"><thead></thead><tbody></tbody></table></div>
+    <p class="footnote" id="planNote"></p>
+    </section>
+    </section>
+
+    <section class="sec" id="sec-chart">
+    <div class="section-title"><span class="no">03</span><h2>月次の推移</h2><span class="tail"><span>青＝売上高　/　緑・赤＝営業利益（同じ目盛り・0より下が赤字）</span></span></div>
+    <div class="card chart-card">
+      <div class="legend"><span><i style="background:var(--c-sales)"></i>売上高</span><span><i style="background:var(--c-profit)"></i>営業利益（黒字）</span><span><i style="background:var(--c-loss)"></i>営業利益（赤字）</span><span><i style="background:var(--c-sales-tint);border:1px dashed var(--c-sales-soft)"></i>年間計画の月割（未実績月）</span></div>
+      <svg id="chart" viewBox="0 0 1040 310" width="100%" style="display:block"></svg>
+    </div>
+    </section>
+
+    <section class="sec" id="sec-table">
+    <div class="section-title">
+      <span class="no">04</span><h2>月次 損益表</h2>
+      <span class="tail">
+        <span id="tblUnit"></span>
+        <button class="link-btn" id="editToggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-3l11-11 3 3L7 21H4z"/><path d="M14 7l3 3"/></svg>
+          項目をカスタマイズ
+        </button>
+      </span>
+    </div>
+
+    <!-- editor -->
+    <div class="editor" id="editor">
+      <h3>表示する項目を組み立てる</h3>
+      <p class="desc">法人ごとに、原価や人件費など弥生の勘定科目を合算した行や、その比率の行を作れます。並び順の変更や、目（👁）アイコンでの非表示もできます。</p>
+      <div class="profile-box">
+        <div class="pb-head"><strong>法人プロファイル（保存済みの設定）</strong><span class="hint" id="storageNote"></span></div>
+        <div class="pb-list" id="profileList"></div>
+      </div>
+      <div class="presets">
+        <span class="preset-label">プリセット：</span>
+        <button class="chip" data-preset="standard">標準（粗利管理）</button>
+        <button class="chip" data-preset="cost">原価・人件費管理</button>
+      </div>
+      <div class="item-list" id="itemList"></div>
+      <div id="formHost"></div>
+      <div class="editor-foot">
+        <button class="btn btn-navi btn-sm" id="addItemBtn">＋ 項目を追加</button>
+        <span class="sp" style="flex:1"></span>
+        <button class="link-btn" id="exportCfg">現在の設定をファイルに書き出す</button>
+        <button class="link-btn" id="importCfg">ファイルから読み込む</button>
+        <input type="file" id="cfgFile" accept=".json" hidden>
+      </div>
+    </div>
+
+    <div class="col-toggle" id="colToggle"></div>
+    <div class="tbl-wrap"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+    <p class="footnote">「累計」は当月までの合計、右端の列は弥生の<b>当期残高（合計）</b>です（12ヶ月そろうと「年間」と表示します）。比率の行は分子÷分母で計算し、累計は表示しません。</p>
+    </section>
+
+    <section class="sec" id="sec-cf">
+    <section id="cfSection">
+      <div class="section-title"><span class="no">05</span><h2>資金繰り表</h2><span class="tail"><span id="cfUnit"></span></span></div>
+      <div class="cf-mode">
+        <span class="cf-open-label">作り方</span>
+        <span class="unit-toggle" id="cfModeToggle" role="group" aria-label="資金繰り表の作り方">
+          <button id="cfModeActual" aria-pressed="true">実額（BSの残高から）</button>
+          <button id="cfModeSimple" aria-pressed="false">簡易CF（利益から）</button>
+        </span>
+        <span class="hint" id="cfModeNote"></span>
+        <span style="flex:1"></span>
+        <button class="link-btn" id="cfCfgToggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 21v-3l11-11 3 3L7 21H4z"/><path d="M14 7l3 3"/></svg>簡易CFの計算方法</button>
+      </div>
+      <div class="cf-config" id="cfConfig"></div>
+      <div class="cf-open">
+        <span class="cf-open-label">期首残高（前期末＝当期のスタート）</span>
+        <span class="cf-unit" id="cfOpenUnit">単位：千円</span>
+        <label>現預金 <input type="text" id="openCash" inputmode="decimal" placeholder="例）15,000"></label>
+        <label>借入金 <input type="text" id="openLoan" inputmode="decimal" placeholder="例）70,000"></label>
+        <span class="hint" id="cfOpenNote">入れると初月の資金の動きと、期首からの増減が表示されます。</span>
+      </div>
+      <div class="cf-cards" id="cfCards"></div>
+      <div class="card chart-card"><div class="legend"><span><i style="background:var(--navi)"></i><span id="cfLegend">月末 現預金残高</span></span><span><i style="background:var(--loss)"></i>最少残高</span></div><svg id="cfChart" viewBox="0 0 1040 250" width="100%" style="display:block"></svg></div>
+      <div class="tbl-wrap" style="margin-top:14px"><table id="cfTbl"><thead></thead><tbody></tbody></table></div>
+      <p class="footnote" id="cfNote">資金繰り表は弥生BSの<b>月末現預金残高（実額）</b>を背骨にしています。営業キャッシュフロー＝営業利益＋減価償却費（非資金費用の戻し）、財務収支＝借入金残高の前月差、その他収支＝実際の増減との差引（売上債権・在庫・買掛金などの運転資金や税金の影響）です。初月の欄は「期首残高」を入れると計算されます（弥生BSに「前期繰越」列があれば自動で入ります）。グラフの縦軸は月々の増減が見えるよう、残高の変動幅に合わせて自動調整しています（0起点ではない場合は右上に注記が出ます）。</p>
+    </section>
+    </section>
+
+    <div class="reset"><button class="btn btn-ghost" id="resetBtn">別のファイルを読み込む</button></div>
+  </section>
+</div>
+
+<script>
+"use strict";
+
+/* ===== サンプル（架空の会社・架空の数値。4月始まり）。明細科目つき ===== */
+const SAMPLE={
+  company:"サンプル商事株式会社",
+  period:"令和07年04月01日 〜 令和08年03月31日",
+  months:[4,5,6,7,8,9,10,11,12,1,2,3],
+  metrics:{
+    sales:{monthly:[7260000,7375000,8007000,7718000,7457000,8354000,8073000,8284000,8883000,7297000,7457000,9069000],year:95234000},
+    gross:{monthly:[3352000,3443000,3697000,3584000,3588000,3820000,4030000,3701000,4123000,3360000,3562000,4340000],year:44600000},
+    fixed:{monthly:[2860000,2781000,4002000,2829000,2782000,2823000,2732000,2819000,4023000,2762000,2803000,2838000],year:36054000},
+    op:{monthly:[492000,662000,-305000,755000,806000,997000,1298000,882000,100000,598000,759000,1502000],year:8546000},
+    cogs:{monthly:[3908000,3932000,4310000,4134000,3869000,4534000,4043000,4583000,4760000,3937000,3895000,4729000],year:50634000},
+    ordinary:{monthly:[453000,623000,-345000,717000,761000,960000,1261000,840000,57000,554000,721000,1466000],year:8068000},
+    pretax:{monthly:[453000,623000,-345000,717000,761000,960000,1261000,840000,57000,554000,721000,1466000],year:8068000},
+    purchase:{monthly:[3148000,3051000,3399000,3296000,3049000,3536000,3231000,3603000,3732000,3140000,3107000,3701000],year:39993000}
+  },
+  cf:{
+    cash:{monthly:[17862000,17860000,17084000,17158000,17267000,17535000,18044000,18216000,17762000,17705000,17782000,18455000],year:18455000},
+    loans:{monthly:[29500000,29000000,28500000,28000000,27500000,27000000,26500000,26000000,25500000,25000000,24500000,24000000],year:24000000},
+    dep:{monthly:[0,0,0,0,0,0,0,0,0,0,0,0],year:600000}
+  },
+  bsTotals:{assets:32455000,equity:1955000,currentAssets:27455000,currentLiab:6500000},
+  accounts:[
+    {name:"売上高",section:"売上高",monthly:[7260000,7375000,8007000,7718000,7457000,8354000,8073000,8284000,8883000,7297000,7457000,9069000],year:95234000},
+    {name:"売上高合計",section:"売上高",monthly:[7260000,7375000,8007000,7718000,7457000,8354000,8073000,8284000,8883000,7297000,7457000,9069000],year:95234000},
+    {name:"仕入高",section:"売上原価",monthly:[3148000,3051000,3399000,3296000,3049000,3536000,3231000,3603000,3732000,3140000,3107000,3701000],year:39993000},
+    {name:"外注加工費",section:"売上原価",monthly:[760000,881000,911000,838000,820000,998000,812000,980000,1028000,797000,788000,1028000],year:10641000},
+    {name:"売上原価",section:"売上原価",monthly:[3908000,3932000,4310000,4134000,3869000,4534000,4043000,4583000,4760000,3937000,3895000,4729000],year:50634000},
+    {name:"役員報酬",section:"販売管理費",monthly:[600000,600000,600000,600000,600000,600000,600000,600000,600000,600000,600000,600000],year:7200000},
+    {name:"役員賞与",section:"販売管理費",monthly:[0,0,0,0,0,0,0,0,0,0,0,0],year:0},
+    {name:"給料手当",section:"販売管理費",monthly:[1150000,1150000,1150000,1150000,1150000,1150000,1150000,1150000,1150000,1150000,1150000,1150000],year:13800000},
+    {name:"賞与",section:"販売管理費",monthly:[0,0,1200000,0,0,0,0,0,1200000,0,0,0],year:2400000},
+    {name:"法定福利費",section:"販売管理費",monthly:[269000,266000,280000,268000,279000,267000,266000,270000,271000,258000,258000,273000],year:3225000},
+    {name:"福利厚生費",section:"販売管理費",monthly:[40000,49000,42000,29000,31000,36000,35000,45000,44000,40000,35000,39000],year:465000},
+    {name:"採用教育費",section:"販売管理費",monthly:[43000,43000,22000,34000,43000,26000,24000,32000,35000,31000,42000,37000],year:412000},
+    {name:"広告宣伝費",section:"販売管理費",monthly:[218000,139000,168000,199000,174000,201000,156000,199000,198000,154000,182000,217000],year:2205000},
+    {name:"旅費交通費",section:"販売管理費",monthly:[125000,121000,139000,129000,102000,133000,98000,117000,127000,112000,127000,105000],year:1435000},
+    {name:"地代家賃",section:"販売管理費",monthly:[250000,250000,250000,250000,250000,250000,250000,250000,250000,250000,250000,250000],year:3000000},
+    {name:"水道光熱費",section:"販売管理費",monthly:[48000,48000,44000,52000,40000,52000,39000,45000,38000,53000,37000,47000],year:543000},
+    {name:"通信費",section:"販売管理費",monthly:[34000,34000,33000,37000,33000,32000,37000,38000,34000,32000,37000,34000],year:415000},
+    {name:"支払手数料",section:"販売管理費",monthly:[28000,26000,19000,26000,25000,21000,22000,18000,21000,27000,30000,31000],year:294000},
+    {name:"支払報酬料",section:"販売管理費",monthly:[55000,55000,55000,55000,55000,55000,55000,55000,55000,55000,55000,55000],year:660000},
+    {name:"販売管理費計",section:"販売管理費",monthly:[2860000,2781000,4002000,2829000,2782000,2823000,2732000,2819000,4023000,2762000,2803000,2838000],year:36054000}
+  ]
+};
+
+let DATA=null, UNIT="k", ITEMS=null, _idc=1, HIDDEN_MONTHS=new Set(), HIDE_CUM=false, HIDE_YEAR=false, PRINT_ORIENT="portrait", PRINT_FS=1;
+
+/* ===== 法人プロファイル（保存・復元） ===== */
+const STORE_KEY="carnavi_profiles_v1";
+const DATA_KEY="carnavi_data_v1";
+let PROFILES={}, currentCompany="", DS_KEY="", PENDING_PROFILE=null, SAVE_FAIL=false, _dsTimer=null, IS_SAMPLE=false, OPEN_AUTO=false;
+let OPEN={cash:null,loan:null};   /* 期首残高：常に「円」で保持 */
+let HIDDEN_SECS=new Set();        /* 非表示にしたセクション */
+let CF_MODE="actual";             /* 資金繰り表の作り方： actual=実額 / simple=簡易CF */
+let CF_CFG={profit:"op",addBack:[],repay:"auto",repayAmt:null,otherAmt:null};
+const SECTIONS=[
+  {id:"cockpit",el:"sec-cockpit",label:"コックピット",desc:"ゲージと経営指標カード"},
+  {id:"plan",   el:"sec-plan",   label:"計画対比",    desc:"年間計画との対比（着地見込・達成率）"},
+  {id:"chart",  el:"sec-chart",  label:"月次の推移",  desc:"売上高と営業利益の棒グラフ"},
+  {id:"table",  el:"sec-table",  label:"月次 損益表", desc:"月別の損益と累計・当期残高"},
+  {id:"cf",     el:"sec-cf",     label:"資金繰り表",  desc:"実額／簡易CFを選んで、現預金の推移と資金の出入りを表示"}
+];
+function applySections(){
+  let no=0;
+  SECTIONS.forEach(sec=>{
+    const el=$(sec.el);if(!el)return;
+    const off=HIDDEN_SECS.has(sec.id);
+    el.classList.toggle("is-hidden",off);
+    if(!off){no++;const n=el.querySelector(".section-title .no");if(n)n.textContent=String(no).padStart(2,"0");}
+  });
+  updateViewSummary();
+}
+function updateViewSummary(){
+  const bar=$("viewBar"),sum=$("viewSummary");if(!bar||!sum)return;
+  bar.style.display=DATA?"flex":"none";
+  const secOff=SECTIONS.filter(x=>HIDDEN_SECS.has(x.id)).map(x=>x.label);
+  const itemOff=(ITEMS||[]).filter(i=>i.hidden).map(i=>i.label);
+  const all=secOff.concat(itemOff);
+  sum.style.display=all.length?"inline-block":"none";
+  sum.textContent=all.length?("非表示："+all.join("・")):"";
+}
+/* 表示する項目（セクション＋損益表の行）を一覧から選ぶ */
+function renderViewPanel(){
+  const host=$("viewPanel");if(!host)return;
+  let h='<h3>表示する項目</h3><p class="desc">チェックを外した項目は、画面からも印刷（PDF）からも消えます。行のどこをクリックしても切り替わります。</p>';
+  h+='<table class="view-tbl"><tbody>';
+  h+='<tr class="grp"><td colspan="3">セクション</td></tr>';
+  SECTIONS.forEach(sec=>{
+    const on=!HIDDEN_SECS.has(sec.id);
+    h+=`<tr class="${on?"":"off"}" data-sec="${sec.id}"><td class="c"><span class="cb ${on?"on":""}">${on?"✓":""}</span></td><td class="n">${escapeHtml(sec.label)}</td><td class="d">${escapeHtml(sec.desc)}</td></tr>`;
+  });
+  if(ITEMS&&ITEMS.length){
+    h+='<tr class="grp"><td colspan="3">月次 損益表の行</td></tr>';
+    ITEMS.forEach(it=>{
+      const on=!it.hidden;
+      h+=`<tr class="${on?"":"off"}" data-item="${it.id}"><td class="c"><span class="cb ${on?"on":""}">${on?"✓":""}</span></td><td class="n">${escapeHtml(it.label)}</td><td class="d">${it.kind==="ratio"?"比率":"金額"}　${escapeHtml(srcText(it))}</td></tr>`;
+    });
+  }
+  h+='</tbody></table>';
+  h+='<div class="view-foot"><button class="btn btn-ghost btn-sm" id="viewAll">すべて表示にする</button><span class="hint">この設定は法人ごとに保存され、次に同じ法人を開いたときも同じ構成で出ます。</span></div>';
+  host.innerHTML=h;
+  host.querySelectorAll("[data-sec]").forEach(tr=>tr.onclick=()=>{
+    const id=tr.dataset.sec;
+    if(HIDDEN_SECS.has(id))HIDDEN_SECS.delete(id);else HIDDEN_SECS.add(id);
+    applySections();renderViewPanel();touchProfile();
+  });
+  host.querySelectorAll("[data-item]").forEach(tr=>tr.onclick=()=>{
+    const it=ITEMS.find(x=>x.id===tr.dataset.item);if(!it)return;
+    it.hidden=!it.hidden;
+    drawTable();renderPlanCompare();renderViewPanel();updateViewSummary();
+    if($("editor").classList.contains("open"))renderItemList();
+    touchProfile();
+  });
+  const all=$("viewAll");
+  if(all)all.onclick=()=>{
+    HIDDEN_SECS.clear();(ITEMS||[]).forEach(i=>{delete i.hidden;});
+    applySections();drawTable();renderPlanCompare();renderViewPanel();
+    if($("editor").classList.contains("open"))renderItemList();
+    touchProfile();
+  };
+}
+const STORAGE_OK=(()=>{try{const k="__cn_t";localStorage.setItem(k,"1");localStorage.removeItem(k);return true;}catch(e){return false;}})();
+function loadProfiles(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||"{}")||{};}catch(e){return {};}}
+function persistProfiles(){try{localStorage.setItem(STORE_KEY,JSON.stringify(PROFILES));return true;}catch(e){return false;}}
+/* --- 決算データの保存（法人×期ごと） --- */
+function loadStore(){try{return JSON.parse(localStorage.getItem(DATA_KEY)||"{}")||{};}catch(e){return {};}}
+function saveStore(o){try{localStorage.setItem(DATA_KEY,JSON.stringify(o));return true;}catch(e){return false;}}
+function dsKey(d){return (d.company||"（事業所名不明）")+"｜"+(d.period||"期間不明");}
+function storeBytes(){try{return (localStorage.getItem(DATA_KEY)||"").length;}catch(e){return 0;}}
+function persistDataset(profileOnly){
+  if(!DATA||!STORAGE_OK)return false;
+  const st=loadStore(), prev=st[DS_KEY];
+  if(profileOnly&&!prev)return false;
+  st[DS_KEY]={company:currentCompany,period:DATA.period||"",periodShown:actualPeriodText(),months:actualIdx().length,savedAt:Date.now(),
+              data:(profileOnly&&prev)?prev.data:DATA,profile:currentProfileData()};
+  const ok=saveStore(st);
+  SAVE_FAIL=!ok;
+  if(!ok&&!profileOnly)alert("このブラウザの保存容量が上限に達したため、データを保存できませんでした。\n古い保存データを削除するか、「データを書き出す」でファイルに保存してください。");
+  return ok;
+}
+function forgetDataset(key){const st=loadStore();delete st[key||DS_KEY];saveStore(st);renderSavedList();renderProfileBar();}
+function openSaved(key){const e=loadStore()[key];if(!e||!e.data)return;IS_SAMPLE=false;DATA=e.data;PENDING_PROFILE=e.profile||null;onDataLoaded();}
+function renderSavedList(){
+  const box=$("savedBox"),host=$("savedList");if(!box||!host)return;
+  const st=loadStore(),keys=Object.keys(st).sort((a,b)=>(st[b].savedAt||0)-(st[a].savedAt||0));
+  const note=$("savedNote");
+  if(!STORAGE_OK){host.innerHTML="";box.style.display="none";if(note)note.textContent="";return;}
+  if(note)note.textContent=keys.length?`${keys.length}件・約${Math.max(1,Math.round(storeBytes()/1024)).toLocaleString("ja-JP")}KB`:"";
+  if(!keys.length){host.innerHTML="";box.style.display="none";return;}
+  box.style.display="block";host.innerHTML="";
+  keys.forEach(k=>{
+    const e=st[k],d=e.savedAt?new Date(e.savedAt):null;
+    const row=document.createElement("div");row.className="sb-row";
+    row.innerHTML=`<button class="sb-open" data-open><span class="sb-co">${escapeHtml(e.company||"（事業所名不明）")}</span><span class="sb-pe">${escapeHtml(e.periodShown||e.period||"期間不明")}${e.months?"（実績 "+e.months+"ヶ月）":""}</span></button>`+
+                  `<span class="sb-date">${d?d.toLocaleString("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}):""}</span>`+
+                  `<button class="sb-del" data-del>削除</button>`;
+    row.querySelector("[data-open]").onclick=()=>openSaved(k);
+    row.querySelector("[data-del]").onclick=()=>{if(confirm("「"+(e.company||"")+"　"+(e.period||"")+"」の保存データを削除しますか？"))forgetDataset(k);};
+    host.appendChild(row);
+  });
+}
+function downloadBlob(blob,filename){
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=filename;a.style.display="none";
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1500);
+}
+function exportBundle(){
+  if(!DATA)return;
+  const o={version:3,kind:"carnavi-data",company:currentCompany,period:DATA.period||"",periodShown:actualPeriodText(),savedAt:Date.now(),data:DATA,profile:currentProfileData()};
+  const blob=new Blob([JSON.stringify(o)],{type:"application/json"});
+  downloadBlob(blob,(docBaseName()||"儲けのカーナビ")+"_データ.json");
+}
+
+function currentProfileData(){return {items:JSON.parse(JSON.stringify(ITEMS)),hiddenMonths:[...HIDDEN_MONTHS],hideCum:HIDE_CUM,hideYear:HIDE_YEAR,kpiSel:KPI_SEL?KPI_SEL.slice():null,printOrient:PRINT_ORIENT,printFs:PRINT_FS,openCash:OPEN.cash,openLoan:OPEN.loan,hiddenSecs:[...HIDDEN_SECS],cfMode:CF_MODE,cfCfg:JSON.parse(JSON.stringify(CF_CFG)),unit:UNIT,savedAt:Date.now()};}
+function applyProfileData(p){
+  ITEMS=(p.items||[]).map(it=>Object.assign({},it,{id:it.id||uid()}));
+  let max=0;ITEMS.forEach(it=>{const m=/^it(\d+)$/.exec(it.id);if(m)max=Math.max(max,+m[1]);});_idc=Math.max(_idc,max+1);
+  HIDDEN_MONTHS=new Set(Array.isArray(p.hiddenMonths)?p.hiddenMonths:[]);
+  HIDE_CUM=!!p.hideCum;HIDE_YEAR=!!p.hideYear;
+  KPI_SEL=Array.isArray(p.kpiSel)?p.kpiSel.slice():null;
+  PRINT_ORIENT=p.printOrient==="landscape"?"landscape":"portrait";
+  PRINT_FS=[1,1.2,1.4].includes(p.printFs)?p.printFs:1;
+  if(p.unit==="k"||p.unit==="yen"||p.unit==="m"){UNIT=p.unit;syncUnitButtons();}
+  OPEN={cash:normOpen(p.openCash),loan:normOpen(p.openLoan)};syncOpenFields();
+  HIDDEN_SECS=new Set(Array.isArray(p.hiddenSecs)?p.hiddenSecs:[]);
+  CF_MODE=(p.cfMode==="simple")?"simple":"actual";
+  CF_CFG=Object.assign({profit:"op",addBack:[],repay:"auto",repayAmt:null,otherAmt:null},p.cfCfg||{});
+  if(!Array.isArray(CF_CFG.addBack))CF_CFG.addBack=[];
+}
+function saveCurrentProfile(){
+  if(!DATA)return;
+  PROFILES[currentCompany]=currentProfileData();
+  const ok=persistProfiles();renderProfileBar();renderProfileList();
+  if(!ok)alert("この環境では保存できませんでした。ファイルをダウンロードしてご自身のブラウザで開くか、『現在の設定をファイルに書き出す』をご利用ください。");
+}
+function touchProfile(){
+  if(DATA&&PROFILES[currentCompany]){PROFILES[currentCompany]=currentProfileData();persistProfiles();}
+  if(DATA&&STORAGE_OK&&!IS_SAMPLE){clearTimeout(_dsTimer);_dsTimer=setTimeout(()=>persistDataset(true),400);}
+  renderProfileBar();
+}
+function deleteProfile(name){delete PROFILES[name];persistProfiles();renderProfileBar();renderProfileList();}
+function onDataLoaded(){
+  currentCompany=DATA.company||"（事業所名不明）";
+  DS_KEY=dsKey(DATA);
+  PROFILES=loadProfiles();
+  const st=loadStore();
+  const p=PENDING_PROFILE||(st[DS_KEY]&&st[DS_KEY].profile)||PROFILES[currentCompany]||null;
+  PENDING_PROFILE=null;
+  if(p)applyProfileData(p);
+  else{if(!ITEMS)ITEMS=buildStandard();HIDDEN_MONTHS=new Set();const s=DATA.metrics.sales.monthly,f=DATA.metrics.fixed.monthly;DATA.months.forEach((_,i)=>{if(!s[i]&&!f[i])HIDDEN_MONTHS.add(i);});HIDE_CUM=false;HIDE_YEAR=false;KPI_SEL=null;PRINT_ORIENT="portrait";PRINT_FS=1;OPEN={cash:null,loan:null};HIDDEN_SECS=new Set();CF_MODE="actual";CF_CFG={profit:"op",addBack:[],repay:"auto",repayAmt:null,otherAmt:null};}
+  /* 保存時に隠していた月でも、新しく実績が入った月は必ず表示に戻す */
+  HIDDEN_MONTHS=new Set([...HIDDEN_MONTHS].filter(i=>!hasActual(i)));
+  OPEN_AUTO=prefillOpening();
+  render();
+  if(!IS_SAMPLE)persistDataset();   /* 読み込んだ時点でこのPCに自動保存（サンプルは除く） */
+  renderSavedList();
+  renderProfileBar();
+}
+function renderProfileBar(){
+  const bar=$("profileBar");if(!DATA){bar.style.display="none";return;}bar.style.display="flex";
+  const dsSaved=STORAGE_OK&&!!loadStore()[DS_KEY]&&!SAVE_FAIL;
+  let html=`<span class="pb-co">現在の法人：<b>${escapeHtml(currentCompany)}</b><span class="pb-pe">${escapeHtml(actualPeriodText())}（実績 ${actualIdx().length}ヶ月）</span></span>`;
+  html+=dsSaved?`<span class="status-pill saved">✓ このPCに保存済み・自動更新</span>`:`<span class="status-pill unsaved">未保存</span>`;
+  html+=`<span class="sp"></span>`;
+  if(!STORAGE_OK)html+=`<span class="pb-warn">※この環境では自動保存できません。「データを書き出す」でファイル保存してください</span>`;
+  else if(SAVE_FAIL)html+=`<span class="pb-warn">※保存容量の上限です。古い保存データを削除するか、ファイルに書き出してください</span>`;
+  html+=`<button class="btn btn-ghost btn-sm" id="pbExport">データを書き出す</button>`;
+  if(dsSaved)html+=`<button class="btn btn-ghost btn-sm" id="pbUnsave">このPCから削除</button>`;
+  else if(STORAGE_OK)html+=`<button class="btn btn-navi btn-sm" id="pbSave">このPCに保存</button>`;
+  bar.innerHTML=html;
+  const ex=$("pbExport");if(ex)ex.onclick=exportBundle;
+  const s=$("pbSave");if(s)s.onclick=()=>{IS_SAMPLE=false;persistDataset();renderProfileBar();renderSavedList();};
+  const u=$("pbUnsave");if(u)u.onclick=()=>{if(confirm("「"+currentCompany+"　"+(DATA.period||"")+"」の保存データをこのPCから削除しますか？\n（画面はこのまま使えます）"))forgetDataset();};
+  const sv=!!PROFILES[currentCompany];
+  const sb=$("saveBtn");if(sb){sb.lastChild.textContent=sv?" 表示形式を更新":" 表示形式を登録";sb.title=sv?"この法人の表示形式（項目・KPI・印刷設定）を上書き":"この法人の表示形式を、他の期にも使えるよう登録";}
+}
+function renderProfileList(){
+  const host=$("profileList");if(!host)return;
+  const note=$("storageNote");if(note)note.textContent=STORAGE_OK?"":"※この環境では保存が無効です。書き出し／読み込みをご利用ください。";
+  const names=Object.keys(PROFILES);
+  if(!names.length){host.innerHTML='<div class="pb-empty">保存された法人はまだありません。上部の「この法人の設定を保存」で登録できます。</div>';return;}
+  host.innerHTML="";
+  names.forEach(name=>{
+    const p=PROFILES[name],d=p.savedAt?new Date(p.savedAt):null;
+    const row=document.createElement("div");row.className="pb-row";
+    row.innerHTML=`<span class="pb-name">${escapeHtml(name)}</span>${name===currentCompany?'<span class="status-pill saved">現在</span>':''}<span class="pb-date">${d?d.toLocaleDateString("ja-JP"):""}</span><span class="sp"></span><button data-apply>この形式を適用</button><button class="del" data-del>削除</button>`;
+    row.querySelector("[data-apply]").onclick=()=>{applyProfileData(p);render();};
+    row.querySelector("[data-del]").onclick=()=>{if(confirm("「"+name+"」を削除しますか？"))deleteProfile(name);};
+    host.appendChild(row);
+  });
+}
+const $=id=>document.getElementById(id);
+const uid=()=>"it"+(_idc++);
+
+function toNum(v){if(v==null)return null;if(typeof v==="number")return isFinite(v)?v:null;let s=String(v).trim().replace(/[, ]/g,"").replace(/△|▲/,"-");if(/^\(.*\)$/.test(s))s="-"+s.slice(1,-1);if(s===""||s==="-")return null;const n=Number(s);return isFinite(n)?n:null;}
+function unitDiv(){return UNIT==="m"?1e6:UNIT==="k"?1e3:1;}
+function fmt(v){if(v==null||!isFinite(v))return "—";let n=v/unitDiv();n=UNIT==="m"?Math.round(n*10)/10:Math.round(n);return n.toLocaleString("ja-JP");}
+function pct(v){return (v==null||!isFinite(v))?"—":(v*100).toFixed(1)+"%";}
+function unitLabel(){return "単位："+unitSuffix();}
+function unitSuffix(){return UNIT==="m"?"百万円":UNIT==="k"?"千円":"円";}
+function fmtU(v){const t=fmt(v);return t==="—"?t:t+'<span class="u">'+unitSuffix()+'</span>';}   /* 指標カード用（単位つき） */
+function fmtUt(v){const t=fmt(v);return t==="—"?t:t+unitSuffix();}                                /* プレーンテキスト用 */
+function unitChip(){return '<span class="unit-chip">'+unitLabel()+'</span>';}
+function syncUnitButtons(){$("uYen").setAttribute("aria-pressed",UNIT==="yen");$("uK").setAttribute("aria-pressed",UNIT==="k");$("uM").setAttribute("aria-pressed",UNIT==="m");}
+function applyOrient(){const land=PRINT_ORIENT==="landscape";$("pageStyle").textContent=`@page{size:A3 ${land?"landscape":"portrait"};margin:9mm}`;document.body.classList.toggle("print-landscape",land);$("oPortrait").setAttribute("aria-pressed",!land);$("oLandscape").setAttribute("aria-pressed",land);}
+function setOrientation(o){PRINT_ORIENT=o;applyOrient();touchProfile();}
+function applyFs(){document.body.style.setProperty("--pf",PRINT_FS);$("fsS").setAttribute("aria-pressed",PRINT_FS===1);$("fsM").setAttribute("aria-pressed",PRINT_FS===1.2);$("fsL").setAttribute("aria-pressed",PRINT_FS===1.4);}
+function setFs(v){PRINT_FS=v;applyFs();touchProfile();}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ===== 解析 ===== */
+const HEADER_KEY="勘定科目";
+const METRIC_DEFS={sales:["売上高合計"],gross:["売上総損益金額"],cogs:["売上原価"],fixed:["販売管理費計"],op:["営業損益金額"],ordinary:["経常損益金額"],pretax:["税引前当期純損益金額"],purchase:["仕入高"]};
+const METRIC_LABEL={sales:"売上高",gross:"粗利益",cogs:"売上原価",fixed:"販管費合計",op:"営業利益",ordinary:"経常利益",pretax:"税引前利益",purchase:"仕入高"};
+const SUBTOTAL_KEYS=["sales","gross","fixed","op","ordinary"];
+
+function pickPLSheet(wb){for(const name of wb.SheetNames){const aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,blankrows:false,defval:null});const flat=aoa.flat().map(c=>c==null?"":String(c).trim());if(flat.includes("営業損益金額")||flat.includes("売上総損益金額"))return aoa;}return null;}
+function parseMeta(aoa){let company="（事業所名不明）",period="";for(const row of aoa.slice(0,8)){const c=row.map(x=>x==null?"":String(x)).join(" ");let m=c.match(/事業所名[：:]\s*(.+?)(\s|$)/);if(m)company=m[1].trim();m=c.match(/集計期間[：:]\s*([0-9令和平成年月日]+)[, ]+([0-9令和平成年月日]+)/);if(m)period=m[1]+" 〜 "+m[2];}return{company,period};}
+
+function parsePL(aoa){
+  let hi=-1;
+  for(let i=0;i<aoa.length;i++){if((aoa[i]||[]).some(c=>c!=null&&String(c).trim()===HEADER_KEY)){hi=i;break;}}
+  if(hi<0)throw new Error("『勘定科目』の見出し行が見つかりませんでした。年間推移の試算表か確認してください。");
+  const head=aoa[hi].map(c=>c==null?"":String(c).trim());
+  const monthCols=[];head.forEach((h,idx)=>{const m=h.match(/(\d{1,2})月度/);if(m)monthCols.push({idx,month:+m[1]});});
+  if(monthCols.length<12)throw new Error("月度の列が12か月分そろっていません（検出 "+monthCols.length+" 列）。");
+  const mCols=monthCols.slice(0,12);
+  let yearCol=head.findIndex(h=>/当期残高/.test(h));if(yearCol<0)yearCol=head.length-1;
+
+  const accounts=[]; const accSeen=new Set(); let section="";
+  const rowByName={};
+  for(let i=hi+1;i<aoa.length;i++){
+    let name=aoa[i][0]==null?"":String(aoa[i][0]).trim();
+    if(!name)continue;
+    const sec=name.match(/^\[(.+)\]$/);
+    if(sec){section=sec[1];continue;}
+    if(!(name in rowByName))rowByName[name]=aoa[i];
+    if(!accSeen.has(name)){
+      accSeen.add(name);
+      accounts.push({name,section,monthly:mCols.map(c=>toNum(aoa[i][c.idx])??0),year:toNum(aoa[i][yearCol])??0});
+    }
+  }
+  const metrics={};
+  for(const key in METRIC_DEFS){
+    let hit=null;for(const k of METRIC_DEFS[key]){if(rowByName[k]){hit=rowByName[k];break;}}
+    metrics[key]=hit?{monthly:mCols.map(c=>toNum(hit[c.idx])??0),year:toNum(hit[yearCol])??0}:{monthly:mCols.map(()=>0),year:0};
+  }
+  return {months:mCols.map(c=>c.month),metrics,accounts};
+}
+function pickBSSheet(wb){for(const name of wb.SheetNames){const aoa=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,blankrows:false,defval:null});const flat=aoa.flat().map(c=>c==null?"":String(c).trim());if(flat.includes("資産合計")||flat.some(x=>x.includes("現金")&&x.includes("預金")&&x.includes("合計")))return aoa;}return null;}
+function parseAccounts(aoa){
+  let hi=-1;for(let i=0;i<aoa.length;i++){if((aoa[i]||[]).some(c=>c!=null&&String(c).trim()===HEADER_KEY)){hi=i;break;}}
+  if(hi<0)return null;
+  const head=aoa[hi].map(c=>c==null?"":String(c).trim());
+  const mCols=[];head.forEach((h,idx)=>{const m=h.match(/(\d{1,2})月度/);if(m)mCols.push({idx,month:+m[1]});});
+  if(mCols.length<12)return null;const M=mCols.slice(0,12);
+  let yc=head.findIndex(h=>/当期残高/.test(h));if(yc<0)yc=head.length-1;
+  const oc=head.findIndex(h=>/前期繰越/.test(h));
+  const accounts=[];const seen=new Set();let sec="";
+  for(let i=hi+1;i<aoa.length;i++){let nm=aoa[i][0]==null?"":String(aoa[i][0]).trim();if(!nm)continue;const s=nm.match(/^\[(.+)\]$/);if(s){sec=s[1];continue;}if(!seen.has(nm)){seen.add(nm);accounts.push({name:nm,section:sec,opening:(oc>=0?toNum(aoa[i][oc]):null),monthly:M.map(c=>toNum(aoa[i][c.idx])??0),year:toNum(aoa[i][yc])??0});}}
+  return {months:M.map(c=>c.month),accounts};
+}
+function sumOpening(list,pred){const hit=list.filter(pred);if(!hit.some(a=>a.opening!=null))return null;let v=0;hit.forEach(a=>v+=(a.opening||0));return v;}
+function sumAccounts(list,pred){const n=list.length?list[0].monthly.length:12;const monthly=Array(n).fill(0);let year=0;list.filter(pred).forEach(a=>{a.monthly.forEach((v,i)=>monthly[i]+=(v||0));year+=(a.year||0);});return {monthly,year};}
+function computeCF(plData,bsAcc){
+  if(!bsAcc)return null;
+  const cashAcc=bsAcc.find(a=>a.name.includes("現金")&&a.name.includes("預金")&&a.name.includes("合計"));
+  if(!cashAcc)return null;
+  const cash={monthly:cashAcc.monthly.slice(),year:cashAcc.year};
+  const loans=sumAccounts(bsAcc,a=>a.name.includes("借入"));
+  const dep=sumAccounts(plData.accounts,a=>a.section==="販売管理費"&&a.name.includes("償却"));
+  const opening={cash:(cashAcc.opening!=null?cashAcc.opening:null),loans:sumOpening(bsAcc,a=>a.name.includes("借入"))};
+  return {cash,loans,dep,opening:(opening.cash!=null||opening.loans!=null)?opening:null};
+}
+function computeBSTotals(bsAcc){
+  if(!bsAcc)return null;
+  const g=n=>{const a=bsAcc.find(x=>x.name===n);return a?a.year:null;};
+  return {assets:g("資産合計"),equity:g("純資産合計")??g("株主資本合計"),currentAssets:g("流動資産合計"),currentLiab:g("流動負債合計")};
+}
+function buildFromWorkbook(buf){
+  const wb=XLSX.read(buf,{type:"array"});
+  const plAoa=pickPLSheet(wb);
+  if(!plAoa)throw new Error("損益計算書のシートが見つかりませんでした。弥生の『残高試算表（年間推移）』を書き出したファイルを選んでください。");
+  const pl=parsePL(plAoa);
+  const data=Object.assign(parseMeta(plAoa),pl);
+  const bsAoa=pickBSSheet(wb);
+  const bs=bsAoa?parseAccounts(bsAoa):null;
+  data.cf=computeCF(pl,bs?bs.accounts:null);
+  data.bsTotals=computeBSTotals(bs?bs.accounts:null);
+  return data;
+}
+
+/* ===== 項目モデル =====
+   kind:
+     value     … 主要指標 or 勘定科目合算           source:{type:'metric',key} | {type:'accounts',names:[]}
+     subtotal  … 弥生の小計（粗利益/販管費合計/営業利益/経常利益/売上高）  metric:key
+     remainder … その他＝差額（基準metric − 指定行の合計）  baseMetric:key, minusIds:[]
+     ratio     … 比率（％）                          numId, denId
+*/
+function buildStandard(){
+  const sales={id:uid(),kind:"value",label:"売上高",source:{type:"metric",key:"sales"}};
+  const gross={id:uid(),kind:"subtotal",label:"粗利益",metric:"gross"};
+  const fixed={id:uid(),kind:"subtotal",label:"販管費合計",metric:"fixed"};
+  const op={id:uid(),kind:"subtotal",label:"営業利益",metric:"op"};
+  return [sales,gross,
+    {id:uid(),kind:"ratio",label:"粗利率",numId:gross.id,denId:sales.id},
+    fixed,op,
+    {id:uid(),kind:"ratio",label:"営業利益率",numId:op.id,denId:sales.id}];
+}
+function laborAccounts(){
+  if(!DATA)return [];
+  const kw=["役員報酬","役員賞与","給料","給与","賃金","賞与","雑給","法定福利","福利厚生","退職金","人件費"];
+  return DATA.accounts.filter(a=>a.section==="販売管理費"&&kw.some(k=>a.name.includes(k))).map(a=>a.name);
+}
+function costAccounts(){
+  if(!DATA)return [];
+  const sub=DATA.accounts.find(a=>a.name==="売上原価");
+  if(sub)return ["売上原価"];
+  return DATA.accounts.filter(a=>a.section==="売上原価").map(a=>a.name);
+}
+function buildCost(){
+  const sales={id:uid(),kind:"value",label:"売上高",source:{type:"metric",key:"sales"}};
+  const cost={id:uid(),kind:"value",label:"原価",source:{type:"accounts",names:costAccounts()}};
+  const gross={id:uid(),kind:"subtotal",label:"粗利益",metric:"gross"};
+  const labor={id:uid(),kind:"value",label:"人件費",source:{type:"accounts",names:laborAccounts()}};
+  const other={id:uid(),kind:"remainder",label:"その他の販管費",baseMetric:"fixed",minusIds:[labor.id]};
+  const fixed={id:uid(),kind:"subtotal",label:"販管費合計",metric:"fixed"};
+  const op={id:uid(),kind:"subtotal",label:"営業利益",metric:"op"};
+  const ord={id:uid(),kind:"subtotal",label:"経常利益",metric:"ordinary"};
+  return [sales,cost,gross,
+    {id:uid(),kind:"ratio",label:"粗利率",numId:gross.id,denId:sales.id},
+    labor,other,fixed,
+    {id:uid(),kind:"ratio",label:"人件費率",numId:labor.id,denId:sales.id},
+    op,
+    {id:uid(),kind:"ratio",label:"営業利益率",numId:op.id,denId:sales.id},
+    ord];
+}
+
+/* 項目1つを計算 → {monthly:[12], year} */
+function metricSeries(key){const m=DATA.metrics[key]||{monthly:DATA.months.map(()=>0),year:0};return {monthly:m.monthly.slice(),year:m.year};}
+function calcValue(item){
+  if(item.source.type==="metric")return metricSeries(item.source.key);
+  const n=DATA.months.length,monthly=Array(n).fill(0);let year=0;
+  (item.source.names||[]).forEach(nm=>{const a=DATA.accounts.find(x=>x.name===nm);if(a){a.monthly.forEach((v,i)=>monthly[i]+=(v||0));year+=(a.year||0);}});
+  return {monthly,year};
+}
+function calcRemainder(item,map){
+  const base=metricSeries(item.baseMetric);
+  const monthly=base.monthly.slice();let year=base.year;
+  (item.minusIds||[]).forEach(id=>{const r=map[id];if(r){r.monthly.forEach((v,i)=>monthly[i]-=(v||0));year-=r.year;}});
+  return {monthly,year};
+}
+function computeAll(){
+  const map={};
+  ITEMS.forEach(it=>{
+    if(it.kind==="value")map[it.id]=calcValue(it);
+    else if(it.kind==="subtotal")map[it.id]=metricSeries(it.metric);
+  });
+  ITEMS.filter(it=>it.kind==="remainder").forEach(it=>{map[it.id]=calcRemainder(it,map);});
+  return map;
+}
+function srcText(item){
+  if(item.kind==="ratio"){const a=ITEMS.find(x=>x.id===item.numId),b=ITEMS.find(x=>x.id===item.denId);return (a?a.label:"?")+" ÷ "+(b?b.label:"?")+"（％）";}
+  if(item.kind==="subtotal")return "小計：弥生の"+METRIC_LABEL[item.metric];
+  if(item.kind==="remainder"){const names=(item.minusIds||[]).map(id=>{const it=ITEMS.find(x=>x.id===id);return it?it.label:"?";});return METRIC_LABEL[item.baseMetric]+" − "+(names.join("・")||"（なし）");}
+  if(item.source.type==="metric")return "主要指標：" + METRIC_LABEL[item.source.key];
+  const names=item.source.names||[];return "科目合算："+(names.length?names.join("・"):"未選択");
+}
+
+/* ===== 描画 ===== */
+function render(){
+  if(!DATA)return;
+  if(!ITEMS)ITEMS=buildStandard();
+  $("intro").style.display="none";$("dash").style.display="block";
+  $("metaCompany").innerHTML="<b>"+escapeHtml(DATA.company)+"</b>";
+  const perA=actualPeriodText(),perF=fiscalPeriodText(),perN=actualIdx().length;
+  $("metaPeriod").innerHTML="対象期間："+escapeHtml(perA)+'<span class="meta-mn">（実績 '+perN+"ヶ月）</span>";
+  $("metaPeriod").title="事業年度："+perF;
+  $("printBtn").style.display="inline-block";$("saveBtn").style.display="inline-block";$("orientToggle").style.display="inline-flex";$("fsToggle").style.display="inline-flex";applyOrient();applyFs();
+  $("printHeader").innerHTML=`<div class="ph-title">儲けのカーナビ ／ ${escapeHtml(DATA.company)}</div><div class="ph-sub">対象期間：${escapeHtml(perA)}（実績 ${perN}ヶ月）　・　${unitLabel()}　・　出力日：${new Date().toLocaleDateString("ja-JP")}　・　事業年度：${escapeHtml(perF)}</div>`;
+  $("cockpitTail").innerHTML=unitChip();$("tblUnit").innerHTML=unitChip();
+
+  const M=DATA.metrics;
+  const rate=M.sales.year?M.op.year/M.sales.year:0;
+  drawGauge(rate);
+  $("gaugeVal").textContent=pct(rate);$("gaugeVal").style.color=rate>=0?"var(--profit)":"var(--loss)";
+  $("gaugeSub").textContent=periodWord()+" 営業利益 ÷ 売上高";
+  const grossRate=M.sales.year?M.gross.year/M.sales.year:0;
+  renderKpis();renderKpiPicker();
+
+  drawChart();renderColToggle();drawTable();renderCF();renderPlanCompare();
+  if($("planEditor").classList.contains("open"))renderPlanEditor();
+  applySections();
+  if($("viewPanel").classList.contains("open"))renderViewPanel();
+  renderProfileBar();
+  if($("editor").classList.contains("open")){renderItemList();renderProfileList();}
+}
+let KPI_SEL=null;
+const KPI_DEFS=[
+  // 規模（年間額）
+  {id:"sales_amt",g:"規模",label:"年間 売上高",kind:"yen",dot:"var(--navi)",calc:d=>d.metrics.sales.year,foot:d=>"月平均 "+fmtUt(d.metrics.sales.year/monthsCount())+"（実績 "+monthsCount()+"ヶ月）"},
+  {id:"gross_amt",g:"規模",label:"年間 粗利益",kind:"yen",dot:"var(--amber)",calc:d=>d.metrics.gross.year},
+  {id:"op_amt",g:"規模",label:"年間 営業利益",kind:"yen",dot:"var(--profit)",calc:d=>d.metrics.op.year,foot:d=>d.metrics.op.year>=0?"黒字":"赤字"},
+  {id:"ord_amt",g:"規模",label:"年間 経常利益",kind:"yen",dot:"var(--profit)",calc:d=>d.metrics.ordinary.year},
+  {id:"sga_amt",g:"規模",label:"年間 販管費",kind:"yen",dot:"var(--ink-soft)",calc:d=>d.metrics.fixed.year,foot:d=>"月平均 "+fmtUt(d.metrics.fixed.year/monthsCount())+"（実績 "+monthsCount()+"ヶ月）"},
+  // 収益性（％）
+  {id:"gross_rate",g:"収益性",label:"粗利率",kind:"pct",dot:"var(--navi)",calc:d=>d.metrics.sales.year?d.metrics.gross.year/d.metrics.sales.year:null},
+  {id:"op_rate",g:"収益性",label:"売上高営業利益率",kind:"pct",dot:"var(--profit)",calc:d=>d.metrics.sales.year?d.metrics.op.year/d.metrics.sales.year:null},
+  {id:"ord_rate",g:"収益性",label:"売上高経常利益率",kind:"pct",dot:"var(--profit)",calc:d=>d.metrics.sales.year?d.metrics.ordinary.year/d.metrics.sales.year:null},
+  {id:"labor_dist",g:"収益性",label:"労働分配率",kind:"pct",dot:"var(--amber)",calc:d=>{const lab=laborYear(d);return d.metrics.gross.year?lab/d.metrics.gross.year:null;},foot:d=>"人件費 "+fmtUt(laborYear(d))},
+  // 損益分岐点
+  {id:"breakeven",g:"損益分岐点",label:"損益分岐点売上高",kind:"yen",dot:"var(--amber)",calc:d=>{const gr=d.metrics.sales.year?d.metrics.gross.year/d.metrics.sales.year:0;return gr>0?d.metrics.fixed.year/gr:null;},foot:d=>"粗利を限界利益とみなす簡易計算"},
+  {id:"breakeven_rate",g:"損益分岐点",label:"損益分岐点比率",kind:"pct",dot:"var(--amber)",calc:d=>{const gr=d.metrics.sales.year?d.metrics.gross.year/d.metrics.sales.year:0;const be=gr>0?d.metrics.fixed.year/gr:null;return (be!=null&&d.metrics.sales.year)?be/d.metrics.sales.year:null;},foot:d=>"低いほど余裕あり"},
+  // 安全性（BS）
+  {id:"equity_ratio",g:"安全性",label:"自己資本比率",kind:"pct",dot:"var(--navi)",need:d=>d.bsTotals&&d.bsTotals.assets,calc:d=>d.bsTotals.assets?d.bsTotals.equity/d.bsTotals.assets:null},
+  {id:"current_ratio",g:"安全性",label:"流動比率",kind:"pct",dot:"var(--navi)",need:d=>d.bsTotals&&d.bsTotals.currentLiab,calc:d=>d.bsTotals.currentLiab?d.bsTotals.currentAssets/d.bsTotals.currentLiab:null},
+  // 資金（BS）
+  {id:"cash_amt",g:"資金",label:"期末 現預金残高",kind:"yen",dot:"var(--navi)",need:d=>d.cf,calc:d=>d.cf.cash.year},
+  {id:"cash_months",g:"資金",label:"現預金 月商比",kind:"months",dot:"var(--navi)",need:d=>d.cf,calc:d=>{const ms=d.metrics.sales.year/monthsCount();return ms?d.cf.cash.year/ms:null;},foot:d=>"月商の何ヶ月分の現預金か（月商 "+fmtUt(d.metrics.sales.year/monthsCount())+"）"},
+  {id:"loan_amt",g:"資金",label:"借入金残高",kind:"yen",dot:"var(--ink-soft)",need:d=>d.cf,calc:d=>d.cf.loans.year},
+  {id:"loan_months",g:"資金",label:"借入金 月商倍率",kind:"months",dot:"var(--ink-soft)",need:d=>d.cf,calc:d=>{const ms=d.metrics.sales.year/monthsCount();return ms?d.cf.loans.year/ms:null;},foot:d=>"月商の何ヶ月分の借入か"},
+  {id:"ocf_amt",g:"資金",label:"年間 営業キャッシュフロー",kind:"yen",dot:"var(--profit)",need:d=>d.cf,calc:d=>d.metrics.op.year+d.cf.dep.year,foot:d=>"営業利益＋減価償却費"},
+  {id:"ocf_rate",g:"資金",label:"営業CF率",kind:"pct",dot:"var(--profit)",need:d=>d.cf,calc:d=>d.metrics.sales.year?(d.metrics.op.year+d.cf.dep.year)/d.metrics.sales.year:null},
+  {id:"debt_repay_years",g:"資金",label:"債務償還年数",kind:"years",dot:"var(--amber)",need:d=>d.cf,calc:d=>{const ocf=(d.metrics.op.year+d.cf.dep.year)/monthsCount()*12;return ocf>0?d.cf.loans.year/ocf:null;},foot:d=>"営業CF（年換算）で借入を返す年数"},
+  {id:"net_cash",g:"資金",label:"ネット現預金",kind:"yen",dot:"var(--navi)",need:d=>d.cf,calc:d=>d.cf.cash.year-d.cf.loans.year,foot:d=>"現預金 − 借入金"},
+  {id:"min_cash",g:"資金",label:"期中 最少現預金",kind:"yen",dot:"var(--navi)",need:d=>d.cf,calc:d=>Math.min.apply(null,d.cf.cash.monthly)},
+  {id:"cash_change",g:"資金",label:"現預金 期中増減",kind:"yen",dot:"var(--navi)",need:d=>d.cf,calc:d=>{const ix=actualIdx();return ix.length?d.cf.cash.year-d.cf.cash.monthly[ix[0]]:null;},foot:d=>"最初の月末からの増減"},
+  {id:"loan_dependency",g:"資金",label:"借入金依存度",kind:"pct",dot:"var(--ink-soft)",need:d=>d.cf&&d.bsTotals&&d.bsTotals.assets,calc:d=>d.bsTotals.assets?d.cf.loans.year/d.bsTotals.assets:null,foot:d=>"借入金 ÷ 総資産"}
+];
+function laborYear(d){let y=0;const kw=["役員報酬","役員賞与","給料","給与","賃金","賞与","雑給","法定福利","福利厚生","退職金","人件費"];d.accounts.filter(a=>a.section==="販売管理費"&&kw.some(k=>a.name.includes(k))).forEach(a=>y+=a.year);return y;}
+function kpiAvailable(){return KPI_DEFS.filter(k=>!k.need||k.need(DATA));}
+function defaultKpiSel(){const want=["op_rate","gross_rate","ocf_amt","debt_repay_years","cash_months","net_cash","equity_ratio","op_amt"];const avail=new Set(kpiAvailable().map(k=>k.id));return want.filter(id=>avail.has(id)).slice(0,6);}
+function fmtKpi(kind,v){
+  if(v==null||!isFinite(v))return "—";
+  if(kind==="pct")return (v*100).toFixed(1)+"%";
+  if(kind==="months")return v.toFixed(1)+'<span class="u">ヶ月</span>';
+  if(kind==="years")return v.toFixed(1)+'<span class="u">年</span>';
+  return fmtU(v);
+}
+function renderKpis(){
+  if(!KPI_SEL)KPI_SEL=defaultKpiSel();
+  const grid=$("kpiGrid");const avail=new Set(kpiAvailable().map(k=>k.id));
+  const sel=KPI_SEL.filter(id=>avail.has(id));
+  if(!sel.length){grid.innerHTML='<div class="card kpi"><div class="k-foot">右上の「指標を選ぶ」から表示する経営指標を選べます。</div></div>';return;}
+  grid.innerHTML=sel.map(id=>{
+    const k=KPI_DEFS.find(x=>x.id===id);const v=k.calc(DATA);const label=k.label.replace(/^年間/,periodWord());
+    const neg=(k.kind==="yen"||k.kind==="pct")&&v!=null&&v<0;
+    const foot=k.foot?k.foot(DATA):"";
+    return `<div class="card kpi"><div class="k-top"><span class="dot" style="background:${k.dot}"></span>${label}</div><div class="k-val num" style="color:${neg?"var(--loss)":"var(--ink)"}">${fmtKpi(k.kind,v)}</div>${foot?`<div class="k-sub">${foot}</div>`:""}</div>`;
+  }).join("");
+}
+function renderKpiPicker(){
+  const host=$("kpiPicker");if(!host)return;
+  if(!KPI_SEL)KPI_SEL=defaultKpiSel();
+  const avail=kpiAvailable();const groups=[];
+  avail.forEach(k=>{let g=groups.find(x=>x.g===k.g);if(!g){g={g:k.g,items:[]};groups.push(g);}g.items.push(k);});
+  let html='<p class="kp-desc">コックピットに表示する経営指標を選んでください（選択は法人プロファイルに保存されます）。</p>';
+  groups.forEach(gr=>{
+    html+=`<div class="kpi-group"><div class="kg-label">${gr.g}</div><div class="kpi-opts">`;
+    gr.items.forEach(k=>{const on=KPI_SEL.includes(k.id);html+=`<button class="kpi-opt ${on?"on":""}" data-id="${k.id}"><span class="chk">${on?"✓":""}</span>${k.label.replace(/^年間/,periodWord())}</button>`;});
+    html+=`</div></div>`;
+  });
+  host.innerHTML=html;
+  host.querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{const id=b.dataset.id;const i=KPI_SEL.indexOf(id);if(i>=0)KPI_SEL.splice(i,1);else KPI_SEL.push(id);renderKpis();renderKpiPicker();touchProfile();});
+}
+
+/* ===== 計画対比 ===== */
+function elapsedMonths(){let c=0;DATA.metrics.sales.monthly.forEach(v=>{if(v)c++;});return c||12;}
+function planItems(){return ITEMS.filter(it=>it.kind==="value"||it.kind==="subtotal"||it.kind==="remainder");}
+function hasPlan(it){return it.plan!=null&&it.plan!==""&&+it.plan!==0;}
+function renderPlanCompare(){
+  if(!DATA)return;
+  $("planUnit").innerHTML=unitChip();
+  const vals=computeAll();
+  const rows=planItems().filter(it=>!it.hidden&&hasPlan(it));
+  const note=$("planNote");
+  $("planSection").classList.toggle("plan-empty",rows.length===0);
+  if(!rows.length){
+    $("planTbl").tHead.innerHTML="";
+    $("planTbl").tBodies[0].innerHTML=`<tr><td style="text-align:left;padding:14px;color:var(--ink-soft)">右上の「計画予算を入力」から年間計画を入れると、実績との対比（着地見込・達成率）が表示されます。</td></tr>`;
+    note.style.display="none";return;
+  }
+  const elapsed=elapsedMonths();
+  $("planTbl").tHead.innerHTML="<tr><th class='lead-col'>項目</th><th>年間計画<span class='th-u'>"+unitSuffix()+"</span></th><th>実績（累計）<span class='th-u'>"+unitSuffix()+"</span></th><th>着地見込<span class='th-u'>"+unitSuffix()+"</span></th><th>達成率</th><th>差異<span class='th-u'>"+unitSuffix()+"</span></th></tr>";
+  let body="";
+  rows.forEach(it=>{
+    const r=vals[it.id]||{monthly:[],year:0};
+    let cum=0;DATA.months.forEach((_,i)=>cum+=(r.monthly[i]||0));
+    const plan=+it.plan, landing=elapsed?cum/elapsed*12:cum, rate=plan?landing/plan:null, diff=landing-plan;
+    const rcls=rate==null?"":(rate>=1?"pos-rate":"neg-rate");
+    body+=`<tr><th class='lead-col'>${escapeHtml(it.label)}</th>`+
+      `<td class='num col-year'>${fmt(plan)}</td>`+
+      `<td class='num'>${fmt(cum)}</td>`+
+      `<td class='num'>${fmt(landing)}</td>`+
+      `<td class='num ${rcls}'>${rate==null?"—":(rate*100).toFixed(1)+"%"}</td>`+
+      `<td class='num ${diff<0?"neg":"pos"}'>${fmt(diff)}</td></tr>`;
+  });
+  $("planTbl").tBodies[0].innerHTML=body;
+  note.style.display="block";
+  note.textContent=`着地見込 ＝ 累計実績 ÷ 経過 ${elapsed} ヶ月 × 12。達成率 ＝ 着地見込 ÷ 年間計画。差異 ＝ 着地見込 − 年間計画。`;
+}
+function renderPlanEditor(){
+  const host=$("planEditor");if(!host)return;
+  const items=planItems();
+  let html=`<div class="pl-head"><strong>年間計画の入力</strong><span class="hint">単位：${UNIT==="m"?"百万円":UNIT==="k"?"千円":"円"}（空欄＝対比しない）</span></div><div class="pl-grid">`;
+  items.forEach(it=>{const val=hasPlan(it)?(it.plan/unitDiv()):"";html+=`<label class="pl-row"><span>${escapeHtml(it.label)}</span><input type="text" inputmode="decimal" data-id="${it.id}" value="${val===""?"":val}"></label>`;});
+  html+=`</div>`;
+  host.innerHTML=html;
+  host.querySelectorAll("input[data-id]").forEach(inp=>inp.oninput=()=>{const it=ITEMS.find(x=>x.id===inp.dataset.id);if(!it)return;const raw=(inp.value||"").replace(/[, 円]/g,"");if(raw===""){delete it.plan;}else{const n=Number(raw);it.plan=isFinite(n)?n*unitDiv():undefined;}renderPlanCompare();drawChart();touchProfile();});
+}
+
+function drawGauge(rate){
+  const min=-0.20,max=0.20,cx=110,cy=120,r=88;
+  const t=Math.max(0,Math.min(1,(rate-min)/(max-min)));const ang=Math.PI*(1-t);
+  const pt=(a,rr)=>[cx+Math.cos(a)*rr,cy-Math.sin(a)*rr];
+  const arc=(a0,a1,rr)=>{const[x0,y0]=pt(a0,rr),[x1,y1]=pt(a1,rr);const large=Math.abs(a1-a0)>Math.PI?1:0,sweep=a1<a0?1:0;return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${rr} ${rr} 0 ${large} ${sweep} ${x1.toFixed(1)} ${y1.toFixed(1)}`;};
+  const segs=[{f:0,t:.4,c:"#E0594E"},{f:.4,t:.55,c:"#FFB02E"},{f:.55,t:1,c:"#16A36B"}];
+  let bands="";segs.forEach(s=>{bands+=`<path d="${arc(Math.PI*(1-s.f),Math.PI*(1-s.t),r)}" stroke="${s.c}" stroke-width="16" fill="none" opacity=".9"/>`;});
+  const za=Math.PI*(1-(0-min)/(max-min));const[zx0,zy0]=pt(za,r-12),[zx1,zy1]=pt(za,r+6);
+  const tick=`<line x1="${zx0.toFixed(1)}" y1="${zy0.toFixed(1)}" x2="${zx1.toFixed(1)}" y2="${zy1.toFixed(1)}" stroke="#173A33" stroke-width="2"/><text x="${zx1.toFixed(1)}" y="${(zy1-4).toFixed(1)}" font-size="9" fill="#4E6A63" text-anchor="middle">0%</text>`;
+  const[nx,ny]=pt(ang,r-16);
+  const needle=`<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" stroke="#173A33" stroke-width="3.5" stroke-linecap="round"/><circle cx="${cx}" cy="${cy}" r="6" fill="#173A33"/><circle cx="${cx}" cy="${cy}" r="2.5" fill="#fff"/>`;
+  const ends=`<text x="${cx-r}" y="${cy+18}" font-size="9" fill="#4E6A63" text-anchor="middle">-20%</text><text x="${cx+r}" y="${cy+18}" font-size="9" fill="#4E6A63" text-anchor="middle">+20%</text>`;
+  $("gauge").innerHTML=bands+tick+ends+needle;
+}
+/* ---- グラフ共通ヘルパー ---- */
+function niceScale(min,max,count,includeZero){
+  count=count||4;
+  if(!isFinite(min))min=0; if(!isFinite(max))max=0;
+  if(includeZero){ if(min>0)min=0; if(max<0)max=0; }
+  if(min===max){ max=min+(Math.abs(min)||1)*0.1; }
+  const raw=(max-min)/count;
+  const mag=Math.pow(10,Math.floor(Math.log10(Math.abs(raw)||1)));
+  const nn=raw/mag;
+  const step=(nn<=1?1:nn<=2?2:nn<=2.5?2.5:nn<=5?5:10)*mag;
+  const lo=Math.floor(min/step)*step, hi=Math.ceil(max/step)*step;
+  const ticks=[]; for(let v=lo;v<=hi+step*1e-6;v+=step) ticks.push(Math.abs(v)<step*1e-6?0:v);
+  return {lo,hi,step,ticks};
+}
+/* 目盛り／データラベルの桁そろえ（refは目盛り幅） */
+function gnum(v,ref){
+  const a=Math.abs(ref==null?v:ref);
+  const dec=a>=100?0:a>=10?1:2;
+  return v.toLocaleString("ja-JP",{minimumFractionDigits:dec,maximumFractionDigits:dec});
+}
+/* ---- 対象期間（実績の入っている月まで） ---- */
+const ERA=[["令和",2018],["平成",1988],["昭和",1925]];
+function parseJDate(str){
+  const m=String(str||"").match(/(令和|平成|昭和)\s*0*(\d+)\s*年\s*0*(\d+)\s*月\s*0*(\d+)\s*日/);
+  if(m){const e=ERA.find(x=>x[0]===m[1]);return {era:m[1],g:e[1]+ +m[2],m:+m[3],d:+m[4]};}
+  const w=String(str||"").match(/(\d{4})\D{1,2}0*(\d{1,2})\D{1,2}0*(\d{1,2})/);
+  if(w)return {era:null,g:+w[1],m:+w[2],d:+w[3]};
+  return null;
+}
+function jDate(era,g,mo,d){
+  const p2=n=>String(n).padStart(2,"0");
+  if(era){const e=ERA.find(x=>x[0]===era);const y=g-e[1];if(y>=1)return era+p2(y)+"年"+p2(mo)+"月"+p2(d)+"日";}
+  return g+"年"+p2(mo)+"月"+p2(d)+"日";
+}
+function yearColLabel(k){return isFullYear()?"年間":(k==="cf"?"期間 合計":"当期残高");}
+function monthsCount(){const n=DATA?actualIdx().length:0;return n||12;}
+function isFullYear(){return !!DATA&&actualIdx().length>=DATA.months.length;}
+function periodWord(){return isFullYear()?"年間":"累計";}
+function fiscalPeriodText(){return (DATA&&DATA.period)||"—";}
+function actualPeriodText(){
+  if(!DATA)return "—";
+  const idx=actualIdx();
+  if(!idx.length)return fiscalPeriodText();
+  const st=parseJDate(String(DATA.period||"").split(/\s*[〜~～]\s*/)[0]);
+  const first=idx[0],last=idx[idx.length-1];
+  if(st){
+    const sG=new Date(st.g,st.m-1+first,1);
+    const eG=new Date(st.g,st.m-1+last+1,0);
+    const sTxt=(first===0)?jDate(st.era,st.g,st.m,st.d):jDate(st.era,sG.getFullYear(),sG.getMonth()+1,1);
+    return sTxt+" 〜 "+jDate(st.era,eG.getFullYear(),eG.getMonth()+1,eG.getDate());
+  }
+  return DATA.months[first]+"月 〜 "+DATA.months[last]+"月";
+}
+/* 印刷・書き出しの既定ファイル名 */
+function docBaseName(){
+  const raw="儲けのカーナビ_"+((DATA&&DATA.company)||"")+"_"+actualPeriodText();
+  return raw.replace(/[\\\/:*?"<>|]/g,"_").replace(/[〜~～]/g,"-").replace(/\s+/g,"").replace(/_+/g,"_").replace(/^_|_$/g,"");
+}
+function hasActual(i){return !!((DATA.metrics.sales.monthly[i]||0)||(DATA.metrics.fixed.monthly[i]||0));}
+function actualIdx(){const a=[];for(let i=0;i<DATA.months.length;i++)if(hasActual(i))a.push(i);return a;}
+/* 年間計画を12等分した月額（未実績月の目安として薄く描く） */
+function planPerMonth(key){
+  if(!ITEMS)return null;
+  const it=ITEMS.find(x=>(x.kind==="value"&&x.source&&x.source.type==="metric"&&x.source.key===key)||(x.kind==="subtotal"&&x.metric===key));
+  if(!it||!hasPlan(it))return null;
+  const v=+it.plan; return isFinite(v)?v/12:null;
+}
+
+/* 月次の推移グラフの配色（役割ごとに1色） */
+const CC={sales:"#2A78D6",salesSoft:"#A8C8EE",profit:"#0E9F6E",profitSoft:"#93DBC1",loss:"#E0594E",lossSoft:"#EFA9A2",lossInk:"#C8412F",profitInk:"#0B7E58"};
+function drawChart(){
+  const W=1040,H=310,padL=68,padR=18,padT=32,padB=40;
+  $("chart").setAttribute("viewBox","0 0 "+W+" "+H);
+  const dv=unitDiv(), months=DATA.months, n=months.length||1;
+  const sales=months.map((_,i)=>(DATA.metrics.sales.monthly[i]||0)/dv);
+  const op   =months.map((_,i)=>(DATA.metrics.op.monthly[i]||0)/dv);
+  const act  =months.map((_,i)=>hasActual(i));
+  const pS=planPerMonth("sales"), pO=planPerMonth("op");
+  const planS=pS==null?null:pS/dv, planO=pO==null?null:pO/dv;
+
+  const pool=[0];
+  months.forEach((_,i)=>{ if(act[i]){pool.push(sales[i],op[i]);} else {if(planS!=null)pool.push(planS); if(planO!=null)pool.push(planO);} });
+  const sc=niceScale(Math.min.apply(null,pool),Math.max.apply(null,pool),4,true);
+
+  const plotW=W-padL-padR, plotH=H-padT-padB, band=plotW/n;
+  const y=v=>padT+(sc.hi-v)/((sc.hi-sc.lo)||1)*plotH, y0=y(0);
+  const bw=Math.min(20,band*0.30), gap=4;
+  const cxi=i=>padL+band*i+band/2;
+  const xS=i=>cxi(i)-bw-gap/2, xO=i=>cxi(i)+gap/2;
+  let lastAct=-1; act.forEach((a,i)=>{if(a)lastAct=i;});
+
+  let g="";
+  /* 未実績ゾーン */
+  if(lastAct>=0&&lastAct<n-1){
+    const x=padL+band*(lastAct+1);
+    g+=`<rect x="${x.toFixed(1)}" y="${padT}" width="${(padL+plotW-x).toFixed(1)}" height="${plotH}" fill="#F4F9F7"/>`;
+    g+=`<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${(padT+plotH).toFixed(1)}" stroke="#C8D8D2" stroke-dasharray="4 4"/>`;
+    g+=`<text x="${(x-7).toFixed(1)}" y="${(padT-11)}" font-size="10" font-weight="700" fill="#4E6A63" text-anchor="end">◀ 実績</text>`;
+    g+=`<text x="${(x+7).toFixed(1)}" y="${(padT-11)}" font-size="10" fill="#A9BEB8">これから ▶</text>`;
+  }
+  /* 目盛り（0線は濃く） */
+  sc.ticks.forEach(t=>{
+    const yy=y(t), zero=Math.abs(t)<sc.step*1e-6;
+    g+=`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${(W-padR)}" y2="${yy.toFixed(1)}" stroke="${zero?"#8FA9A2":"#ECF3F0"}" stroke-width="${zero?1.4:1}"/>`;
+    g+=`<text x="${padL-9}" y="${(yy+3.4).toFixed(1)}" font-size="10" fill="${zero?"#4E6A63":"#9DB3AC"}" text-anchor="end">${gnum(t,sc.step)}</text>`;
+  });
+  /* 棒（売上高・営業利益とも同じ目盛り。0線より下が赤字） */
+  const bar=(x,v,fill,fo,stroke)=>{
+    const yv=y(v), yy=Math.min(yv,y0), hh=Math.max(1.6,Math.abs(yv-y0));
+    return `<rect x="${x.toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}" rx="3" fill="${fill}" fill-opacity="${fo}"${stroke?` stroke="${stroke}" stroke-width="1.1" stroke-dasharray="3 2.5"`:""}/>`;
+  };
+  months.forEach((mm,i)=>{
+    if(act[i]){
+      g+=bar(xS(i),sales[i],CC.sales,.92,null);
+      g+=bar(xO(i),op[i],op[i]<0?CC.loss:CC.profit,.95,null);
+      const ys=y(sales[i]);
+      g+=`<text x="${(xS(i)+bw/2).toFixed(1)}" y="${(sales[i]<0?ys+11:ys-5).toFixed(1)}" font-size="8.6" font-weight="600" fill="#2A5C93" text-anchor="middle">${gnum(sales[i],sc.step)}</text>`;
+      const yo=y(op[i]);
+      g+=`<text x="${(xO(i)+bw/2).toFixed(1)}" y="${(op[i]<0?yo+11:yo-5).toFixed(1)}" font-size="8.6" font-weight="700" fill="${op[i]<0?CC.lossInk:CC.profitInk}" text-anchor="middle">${gnum(op[i],sc.step)}</text>`;
+    }else{
+      if(planS!=null)g+=bar(xS(i),planS,CC.sales,.14,CC.salesSoft);
+      if(planO!=null)g+=bar(xO(i),planO,planO<0?CC.loss:CC.profit,.14,planO<0?CC.lossSoft:CC.profitSoft);
+    }
+    g+=`<text x="${cxi(i).toFixed(1)}" y="${(padT+plotH+21)}" font-size="10" fill="${act[i]?"#4E6A63":"#A9BEB8"}" text-anchor="middle">${mm}月</text>`;
+  });
+  $("chart").innerHTML=g;
+}
+function visibleMonthIdx(){const a=[];for(let i=0;i<DATA.months.length;i++)if(!HIDDEN_MONTHS.has(i))a.push(i);return a;}
+function renderColToggle(){
+  const host=$("colToggle");if(!host)return;
+  let html='<span class="ct-label">表に出す月：</span>';
+  DATA.months.forEach((mm,i)=>{const on=!HIDDEN_MONTHS.has(i);html+=`<button class="mchip ${on?"on":"off"}" data-mi="${i}">${mm}月</button>`;});
+  html+='<span class="ct-sep"></span><span class="ct-label">集計列：</span>';
+  html+=`<button class="mchip ${HIDE_CUM?"off":"on"}" data-col="cum">累計</button>`;
+  html+=`<button class="mchip ${HIDE_YEAR?"off":"on"}" data-col="year">年間</button>`;
+  html+='<a href="#" class="link-btn ct-link" id="hideZeroBtn">実績0の月を隠す</a>';
+  host.innerHTML=html;
+  host.querySelectorAll("[data-mi]").forEach(b=>b.onclick=()=>{const i=+b.dataset.mi;HIDDEN_MONTHS.has(i)?HIDDEN_MONTHS.delete(i):HIDDEN_MONTHS.add(i);drawTable();renderCF();renderColToggle();touchProfile();});
+  host.querySelectorAll("[data-col]").forEach(b=>b.onclick=()=>{if(b.dataset.col==="cum")HIDE_CUM=!HIDE_CUM;else HIDE_YEAR=!HIDE_YEAR;drawTable();renderCF();renderColToggle();touchProfile();});
+  $("hideZeroBtn").onclick=e=>{e.preventDefault();const s=DATA.metrics.sales.monthly,f=DATA.metrics.fixed.monthly,allHidden=DATA.months.every((_,i)=>HIDDEN_MONTHS.has(i)||(!s[i]&&!f[i]));
+    if(allHidden){HIDDEN_MONTHS.clear();}else{DATA.months.forEach((_,i)=>{if(!s[i]&&!f[i])HIDDEN_MONTHS.add(i);});}
+    drawTable();renderCF();renderColToggle();touchProfile();};
+}
+function drawTable(){
+  const vals=computeAll(),vis=visibleMonthIdx();
+  let head="<tr><th class='lead-col'>科目<span class='th-u'>（"+unitSuffix()+"）</span></th>";vis.forEach(i=>head+=`<th>${DATA.months[i]}月</th>`);
+  if(!HIDE_CUM)head+="<th class='col-sum'>累計</th>";if(!HIDE_YEAR)head+="<th class='col-year'>"+yearColLabel()+"</th>";head+="</tr>";
+  $("tbl").tHead.innerHTML=head;
+  const cls=v=>v<0?"neg":"pos";
+  let body="";
+  ITEMS.filter(it=>!it.hidden).forEach(item=>{
+    if(item.kind==="ratio"){
+      const a=vals[item.numId],b=vals[item.denId];
+      let tr=`<th class='lead-col'>${escapeHtml(item.label)}</th>`;
+      vis.forEach(i=>{const den=b?b.monthly[i]:0;tr+=`<td class='num rate'>${pct(den?a.monthly[i]/den:null)}</td>`;});
+      const yr=(a&&b&&b.year)?a.year/b.year:null;
+      if(!HIDE_CUM)tr+=`<td class='num col-sum'>—</td>`;if(!HIDE_YEAR)tr+=`<td class='num col-year'>${pct(yr)}</td>`;
+      body+="<tr class='is-ratio'>"+tr+"</tr>";
+    }else{
+      const r=vals[item.id]||{monthly:DATA.months.map(()=>0),year:0};
+      let cum=0;DATA.months.forEach((_,i)=>cum+=(r.monthly[i]||0));
+      let tr=`<th class='lead-col'>${escapeHtml(item.label)}</th>`;
+      vis.forEach(i=>{const v=r.monthly[i];tr+=`<td class='num ${cls(v)}'>${fmt(v)}</td>`;});
+      if(!HIDE_CUM)tr+=`<td class='num col-sum'>${fmt(cum)}</td>`;if(!HIDE_YEAR)tr+=`<td class='num col-year'>${fmt(r.year)}</td>`;
+      body+=`<tr class='${item.kind==="subtotal"?"is-subtotal":""}'>`+tr+"</tr>";
+    }
+  });
+  $("tbl").tBodies[0].innerHTML=body;
+}
+
+/* ===== 簡易資金繰り表 ===== */
+/* 期首残高：欄は表示単位、内部は円。単位を切り替えても値は丸めない */
+function readOpenField(id){const v=($(id).value||"").replace(/[,\s円]/g,"").replace(/△|▲/,"-");if(v==="")return null;const n=Number(v);return isFinite(n)?n*unitDiv():null;}
+function normOpen(v){if(v==null||v==="")return null;if(typeof v==="number")return isFinite(v)?v:null;const n=Number(String(v).replace(/[,\s円]/g,"").replace(/△|▲/,"-"));return isFinite(n)?n:null;}
+function syncOpenFields(){$("openCash").value=fmtInput(OPEN.cash);$("openLoan").value=fmtInput(OPEN.loan);}
+function fmtInput(v){if(v==null||!isFinite(v))return "";const n=v/unitDiv();return (UNIT==="m"?Math.round(n*10)/10:Math.round(n)).toLocaleString("ja-JP");}
+/* 弥生BSの「前期繰越」があれば期首残高を自動で埋める */
+function prefillOpening(){
+  const o=DATA&&DATA.cf&&DATA.cf.opening;let auto=false;
+  if(o){
+    if(OPEN.cash==null&&o.cash!=null){OPEN.cash=o.cash;auto=true;}
+    if(OPEN.loan==null&&o.loans!=null){OPEN.loan=o.loans;auto=true;}
+  }
+  syncOpenFields();
+  return auto;
+}
+function renderCF(){
+  const host=$("cfSection");
+  if(!DATA){host.style.display="none";return;}
+  if(!DATA.cf&&CF_MODE==="actual")CF_MODE="simple";   /* BSが読めないときは簡易CFへ */
+  host.style.display="block";
+  $("cfUnit").innerHTML=unitChip();
+  $("cfOpenUnit").textContent=unitLabel();
+  $("openCash").placeholder=UNIT==="m"?"例）15.0":UNIT==="k"?"例）15,000":"例）15,000,000";
+  $("openLoan").placeholder=UNIT==="m"?"例）70.0":UNIT==="k"?"例）70,000":"例）70,000,000";
+  syncCfMode();
+  if($("cfConfig").classList.contains("open"))renderCfConfig();
+  if(CF_MODE==="actual")renderCFActual(); else renderCFSimple();
+}
+function syncCfMode(){
+  const okA=!!(DATA&&DATA.cf);
+  $("cfModeActual").setAttribute("aria-pressed",CF_MODE==="actual");
+  $("cfModeSimple").setAttribute("aria-pressed",CF_MODE==="simple");
+  $("cfModeActual").disabled=!okA;
+  $("cfModeActual").style.opacity=okA?"":"0.45";
+  $("cfModeActual").title=okA?"":"弥生BS（現預金・借入金の月次残高）が読めないため選べません";
+  $("cfCfgToggle").style.display=CF_MODE==="simple"?"":"none";
+  $("cfModeNote").textContent=CF_MODE==="actual"
+    ?"BSの月末現預金残高を正として、差額を埋める作り方"
+    :(okA?"利益＋非資金費用から作り、返済などを引く作り方":"BSが読めないため簡易CFで作成しています");
+  $("cfLegend").textContent=(CF_MODE==="simple"&&OPEN.cash==null)?"期首からの累積 資金収支":"月末 現預金残高";
+}
+
+/* ---- 共通の部品 ---- */
+function depSeries(){
+  if(DATA.cf&&DATA.cf.dep)return DATA.cf.dep;
+  return sumAccounts(DATA.accounts,a=>(a.section==="販売管理費"||a.section==="売上原価")&&/償却/.test(a.name));
+}
+function pickableAccounts(){
+  return DATA.accounts.filter(a=>(a.section==="販売管理費"||a.section==="売上原価")&&!/(計|合計)$/.test(a.name));
+}
+function addBackSeries(){
+  const names=CF_CFG.addBack||[];
+  if(!names.length)return {monthly:DATA.months.map(()=>0),year:0};
+  return sumAccounts(DATA.accounts,a=>names.indexOf(a.name)>=0);
+}
+function cfProfitLabel(){return CF_CFG.profit==="ordinary"?"経常利益":"営業利益";}
+
+/* ---- ① 実額方式（弥生BSの月末残高を背骨にする） ---- */
+function renderCFActual(){
+  const m=DATA.months;
+  const cash=DATA.cf.cash.monthly,loans=DATA.cf.loans.monthly,dep=DATA.cf.dep.monthly,op=DATA.metrics.op.monthly;
+  const oc=OPEN.cash, ol=OPEN.loan;
+  const prevCash=i=>i===0?oc:cash[i-1];
+  const prevLoan=i=>i===0?ol:loans[i-1];
+  const opCF=i=>op[i]+(dep[i]||0);
+  const finCF=i=>{const p=prevLoan(i);return p==null?null:loans[i]-p;};
+  const actChg=i=>{const p=prevCash(i);return p==null?null:cash[i]-p;};
+  const otherCF=i=>{const a=actChg(i);if(a==null)return null;const f=finCF(i);return a-opCF(i)-(f==null?0:f);};
+
+  const endCash=DATA.cf.cash.year;
+  const yearOpCF=DATA.metrics.op.year+DATA.cf.dep.year;
+  let minV=Infinity,minM=null;
+  if(oc!=null&&oc<minV){minV=oc;minM="期首";}
+  actualIdx().forEach(i=>{if(cash[i]<minV){minV=cash[i];minM=m[i]+"月";}});
+  if(!isFinite(minV)){minV=null;minM=null;}
+  let cards=cfCard("期末 現預金残高",fmtU(endCash),endCash<0?"資金ショート":"",endCash<0)+
+    cfCard(periodWord()+" 営業キャッシュフロー",fmtU(yearOpCF),"営業利益＋減価償却費",yearOpCF<0)+
+    cfCard("最少 現預金残高",fmtU(minV),(minM||""),minV!=null&&minV<0);
+  if(oc!=null){const chg=endCash-oc;cards+=cfCard("期首からの増減",(chg>0?"+":"")+fmtU(chg),"期首 "+fmtUt(oc)+" → 期末 "+fmtUt(endCash),chg<0);}
+  $("cfCards").innerHTML=cards;
+  $("cfOpenNote").innerHTML=(oc==null&&ol==null)
+    ?'入れると初月の資金の動きと、期首からの増減が表示されます。空欄でも2か月目以降は計算されます。'
+    :(OPEN_AUTO?'<span class="cf-auto">✓ 弥生BSの「前期繰越」から自動取得しました（上書きできます）</span>':'期首を基準に初月の資金の動きを計算しています。');
+
+  drawCFChart(cash,oc);
+
+  const yearFin=(ol!=null)?DATA.cf.loans.year-ol:null;
+  const yearAct=(oc!=null)?endCash-oc:null;
+  const yearOther=(yearAct!=null)?yearAct-yearOpCF-(yearFin==null?0:yearFin):null;
+  let body="";
+  body+=cfRow("前月繰越（現預金）",i=>prevCash(i),(oc!=null?oc:null),"cf-carry");
+  body+=cfRow("営業キャッシュフロー",i=>opCF(i),yearOpCF);
+  body+=cfRow("財務収支（借入金増減）",i=>finCF(i),yearFin);
+  body+=cfRow("その他収支（運転資金等）",i=>otherCF(i),yearOther);
+  body+=cfRow("当月資金収支",i=>actChg(i),yearAct,"cf-sub");
+  body+=cfRow("翌月繰越（現預金残高）",i=>cash[i],endCash,"cf-carry");
+  cfHead();$("cfTbl").tBodies[0].innerHTML=body;
+  $("cfNote").innerHTML='<b>実額方式</b>：弥生BSの<b>月末現預金残高（実額）</b>を背骨にしています。営業キャッシュフロー＝営業利益＋減価償却費、財務収支＝借入金残高の前月差、その他収支＝実際の増減との差引（売上債権・在庫・買掛金などの運転資金や税金の影響）です。初月の欄は「期首残高」を入れると計算されます（弥生BSに「前期繰越」列があれば自動で入ります）。実際に動いた資金を正として見たいときはこちら。';
+}
+
+/* ---- ② 簡易CF方式（利益から積み上げる） ---- */
+function renderCFSimple(){
+  const m=DATA.months;
+  const profit=DATA.metrics[CF_CFG.profit]||DATA.metrics.op;
+  const dep=depSeries(), add=addBackSeries();
+  const oc=OPEN.cash, ol=OPEN.loan;
+  const loans=DATA.cf?DATA.cf.loans.monthly:null;
+  const A=i=>hasActual(i);
+  const prevLoan=i=>i===0?ol:(loans?loans[i-1]:null);
+  const opCF=i=>(profit.monthly[i]||0)+(dep.monthly[i]||0)+(add.monthly[i]||0);
+  const fin=i=>{
+    if(CF_CFG.repay==="manual")return -(CF_CFG.repayAmt||0);
+    if(!loans)return 0;
+    const p=prevLoan(i);return p==null?0:loans[i]-p;
+  };
+  const oth=i=>-(CF_CFG.otherAmt||0);
+  const net=i=>opCF(i)+fin(i)+oth(i);
+  const idx=actualIdx();
+  const bal=[],prev=[];
+  let run=(oc!=null?oc:0);
+  m.forEach((_,i)=>{prev[i]=run;if(A(i)){run+=net(i);}bal[i]=A(i)?run:null;});
+  const last=idx.length?idx[idx.length-1]:-1;
+  const endBal=last>=0?bal[last]:null;
+  const sum=fn=>{let t=0;idx.forEach(i=>t+=fn(i));return t;};
+  const sOpCF=sum(opCF),sFin=sum(fin),sOth=sum(oth),sNet=sum(net);
+
+  /* カード */
+  const known=(oc!=null);
+  let minV=Infinity,minM=null;
+  if(known){minV=oc;minM="期首";idx.forEach(i=>{if(bal[i]<minV){minV=bal[i];minM=m[i]+"月";}});}
+  const cards=
+    cfCard("期末 現預金残高（見込）",known?fmtU(endBal):"—",known?(endBal<0?"資金ショート":""):"期首残高を入れると出ます",known&&endBal<0)+
+    cfCard(periodWord()+" 簡易営業キャッシュフロー",fmtU(sOpCF),cfProfitLabel()+"＋減価償却費"+((CF_CFG.addBack||[]).length?"＋戻し科目":""),sOpCF<0)+
+    cfCard("最少 現預金残高（見込）",known?fmtU(minV):"—",known?(minM||""):"期首残高を入れると出ます",known&&minV<0)+
+    cfCard("期首からの増減",(sNet>0?"+":"")+fmtU(sNet),"簡易営業CF＋財務収支ほか",sNet<0);
+  $("cfCards").innerHTML=cards;
+  $("cfOpenNote").innerHTML=known
+    ?(OPEN_AUTO?'<span class="cf-auto">✓ 弥生BSの「前期繰越」から自動取得しました（上書きできます）</span>':'期首残高から積み上げて、毎月の残高見込みを計算しています。')
+    :'<b>期首残高（現預金）を入れてください。</b>入れるまでは残高の見込みが出ず、期首からの累積だけを表示します。';
+
+  drawCFChart(known?bal.map(v=>v==null?0:v):m.map((_,i)=>A(i)?(prev[i]-(oc!=null?oc:0))+net(i):0),known?oc:null);
+
+  let body="";
+  body+=cfRow("前月繰越（現預金）",i=>A(i)?(known?prev[i]:null):null,(known?oc:null),"cf-carry");
+  body+=cfRow(cfProfitLabel(),i=>A(i)?profit.monthly[i]:null,profit.year);
+  body+=cfRow("＋ 減価償却費",i=>A(i)?(dep.monthly[i]||0):null,sum(i=>dep.monthly[i]||0));
+  if((CF_CFG.addBack||[]).length)
+    body+=cfRow("＋ 戻す科目（"+escapeHtml(CF_CFG.addBack.join("・"))+"）",i=>A(i)?(add.monthly[i]||0):null,sum(i=>add.monthly[i]||0));
+  body+=cfRow("＝ 簡易営業キャッシュフロー",i=>A(i)?opCF(i):null,sOpCF,"cf-sub");
+  if(CF_CFG.repay==="manual"||loans)body+=cfRow(CF_CFG.repay==="manual"?"− 借入金の返済（月額入力）":"財務収支（借入金増減）",i=>A(i)?fin(i):null,sFin);
+  if(CF_CFG.otherAmt)body+=cfRow("− その他支出（設備投資等）",i=>A(i)?oth(i):null,sOth);
+  body+=cfRow("＝ 当月資金収支",i=>A(i)?net(i):null,sNet,"cf-sub");
+  body+=cfRow("翌月繰越（現預金残高）",i=>A(i)?(known?bal[i]:null):null,(known?endBal:null),"cf-carry");
+  cfHead();$("cfTbl").tBodies[0].innerHTML=body;
+
+  const finTxt=CF_CFG.repay==="manual"
+    ?"返済は入力された月額（"+fmtUt(CF_CFG.repayAmt||0)+"／月）を差し引いています。"
+    :"返済は弥生BSの借入金残高の前月差から取っています（新規借入があればプラスに出ます）。";
+  $("cfNote").innerHTML='<b>簡易CF方式</b>：'+escapeHtml(cfProfitLabel())+'に減価償却費などの<b>資金が出ていかない費用</b>を足し戻して簡易営業キャッシュフローを作り、そこから返済などを引いて残高を積み上げています。'+finTxt+'売上債権・在庫・買掛金の増減（運転資金）は反映していないため、BSの実額とはズレます。利益がどれだけ資金として残るかを見たいときはこちら。戻す科目は「簡易CFの計算方法」から選べます。';
+}
+
+function cfHead(){
+  const m=DATA.months,vis=visibleMonthIdx();
+  let head="<tr><th class='lead-col'>項目<span class='th-u'>（"+unitSuffix()+"）</span></th>";
+  vis.forEach(i=>head+=`<th>${m[i]}月</th>`);
+  if(!HIDE_YEAR)head+="<th class='col-year'>"+yearColLabel("cf")+"</th>";
+  head+="</tr>";
+  $("cfTbl").tHead.innerHTML=head;
+}
+function cfRow(label,fn,yearVal,cls){
+  const vis=visibleMonthIdx();
+  const cell=v=>`<td class='num ${v==null?"":(v<0?"neg":"pos")}'>${v==null?"—":fmt(v)}</td>`;
+  let tr=`<th class='lead-col'>${label}</th>`;
+  vis.forEach(i=>tr+=cell(fn(i)));
+  if(!HIDE_YEAR)tr+=`<td class='num col-year ${yearVal!=null&&yearVal<0?"neg":""}'>${yearVal==null?"—":fmt(yearVal)}</td>`;
+  return `<tr class='${cls||""}'>`+tr+"</tr>";
+}
+
+/* ---- 簡易CFの計算方法パネル ---- */
+function renderCfConfig(){
+  const host=$("cfConfig");if(!host||!DATA)return;
+  const dep=depSeries(),add=addBackSeries();
+  const sel=CF_CFG.addBack||[];
+  let h='<h3>簡易CFの計算方法</h3><p class="desc">利益をいくら資金として残せたかを、利益に「資金が出ていかない費用」を足し戻して概算します。</p>';
+  h+='<div class="cfg-row"><span class="cfg-lb">利益の起点</span><div class="cfg-body">'+
+     '<span class="unit-toggle" style="margin:0"><button data-profit="op" aria-pressed="'+(CF_CFG.profit!=="ordinary")+'">営業利益</button><button data-profit="ordinary" aria-pressed="'+(CF_CFG.profit==="ordinary")+'">経常利益</button></span>'+
+     '<span class="hint">本業だけで見るなら営業利益、支払利息まで含めるなら経常利益。</span></div></div>';
+  h+='<div class="cfg-row"><span class="cfg-lb">足し戻す費用</span><div class="cfg-body">'+
+     '<span class="unit-chip">減価償却費（自動）'+fmtUt(dep.year||0)+'</span>'+
+     (sel.length?'<span class="unit-chip">追加分 '+fmtUt(add.year||0)+'</span>':'')+
+     '<span class="hint">下から選んだ科目は費用として計上されていても資金が出ていかないものとみなし、利益に足し戻します（引当金繰入・除却損など）。</span>'+
+     '<div class="acc-chips">'+pickableAccounts().map(a=>`<button class="acc-chip ${sel.indexOf(a.name)>=0?"on":""}" data-acc="${escapeHtml(a.name)}">${escapeHtml(a.name)}</button>`).join("")+'</div>'+
+     '</div></div>';
+  const auto=CF_CFG.repay!=="manual";
+  h+='<div class="cfg-row"><span class="cfg-lb">返済など</span><div class="cfg-body">'+
+     '<label class="rd"><input type="radio" name="cfRepay" value="auto" '+(auto?"checked":"")+(DATA.cf?"":" disabled")+'>BSの借入金増減から自動</label>'+
+     '<label class="rd"><input type="radio" name="cfRepay" value="manual" '+(!auto?"checked":"")+'>月額を入力</label>'+
+     '<input type="text" id="cfRepayAmt" inputmode="decimal" placeholder="例）125" value="'+fmtInput(CF_CFG.repayAmt)+'"'+(auto?" disabled":"")+'>'+
+     '<span class="unit-chip">'+unitLabel()+'／月</span>'+
+     (DATA.cf?"":'<span class="hint">このファイルはBSが読めないため、月額の入力のみ使えます。</span>')+
+     '</div></div>';
+  h+='<div class="cfg-row"><span class="cfg-lb">その他の月次支出</span><div class="cfg-body">'+
+     '<input type="text" id="cfOtherAmt" inputmode="decimal" placeholder="例）100" value="'+fmtInput(CF_CFG.otherAmt)+'">'+
+     '<span class="unit-chip">'+unitLabel()+'／月</span>'+
+     '<span class="hint">設備投資や税金など、毎月一定で出ていく想定額があれば（任意）。</span></div></div>';
+  host.innerHTML=h;
+  host.querySelectorAll("[data-profit]").forEach(b=>b.onclick=()=>{CF_CFG.profit=b.dataset.profit;renderCF();renderCfConfig();touchProfile();});
+  host.querySelectorAll("[data-acc]").forEach(b=>b.onclick=()=>{
+    const nm=b.dataset.acc,i=(CF_CFG.addBack||[]).indexOf(nm);
+    if(!CF_CFG.addBack)CF_CFG.addBack=[];
+    if(i>=0)CF_CFG.addBack.splice(i,1);else CF_CFG.addBack.push(nm);
+    renderCF();renderCfConfig();touchProfile();});
+  host.querySelectorAll('input[name="cfRepay"]').forEach(r=>r.onchange=()=>{CF_CFG.repay=r.value;renderCF();renderCfConfig();touchProfile();});
+  const ra=$("cfRepayAmt");if(ra)ra.oninput=()=>{CF_CFG.repayAmt=readAmtField("cfRepayAmt");renderCF();touchProfile();};
+  const oa=$("cfOtherAmt");if(oa)oa.oninput=()=>{CF_CFG.otherAmt=readAmtField("cfOtherAmt");renderCF();touchProfile();};
+}
+function readAmtField(id){const el=$(id);if(!el)return null;const v=(el.value||"").replace(/[,\s円]/g,"").replace(/△|▲/,"-");if(v==="")return null;const n=Number(v);return isFinite(n)?n*unitDiv():null;}
+function cfCard(label,val,foot,neg){
+  return `<div class="card kpi"><div class="k-top"><span class="dot" style="background:${neg?"var(--loss)":"var(--navi)"}"></span>${label}</div><div class="k-val num" style="color:${neg?"var(--loss)":"var(--ink)"}">${val}</div><div class="k-foot">${foot||""}</div></div>`;
+}
+function drawCFChart(cashFull,openCash){
+  const W=1040,H=250,padL=68,padR=18,padT=28,padB=40;
+  $("cfChart").setAttribute("viewBox","0 0 "+W+" "+H);
+  const dv=unitDiv(), months=DATA.months, n=months.length||1;
+  const idx=actualIdx(), use=idx.length?idx:[0];
+  const lead=(openCash!=null)?1:0;            /* 期首の1コマを左に足す */
+  const slots=n+lead;
+  const vals=use.map(i=>(cashFull[i]||0)/dv);
+  if(lead)vals.push(openCash/dv);
+  let lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
+  const pad=((hi-lo)||Math.abs(hi)||1)*0.35;
+  let sc=niceScale(lo-pad,hi+pad,4,false);
+  if(lo>=0&&sc.lo<0)sc=niceScale(0,hi+pad,4,false);
+  const plotW=W-padL-padR, plotH=H-padT-padB, band=plotW/slots;
+  const y=v=>padT+(sc.hi-v)/((sc.hi-sc.lo)||1)*plotH;
+  const cxi=i=>padL+band*(i+lead)+band/2;     /* 月インデックス→x */
+  const x0=padL+band/2;                        /* 期首のx */
+  const lastAct=use[use.length-1];
+
+  let g="";
+  if(lastAct<n-1){
+    const x=padL+band*(lastAct+1+lead);
+    g+=`<rect x="${x.toFixed(1)}" y="${padT}" width="${(padL+plotW-x).toFixed(1)}" height="${plotH}" fill="#F4F9F7"/>`;
+    g+=`<line x1="${x.toFixed(1)}" y1="${padT}" x2="${x.toFixed(1)}" y2="${(padT+plotH).toFixed(1)}" stroke="#C8D8D2" stroke-dasharray="4 4"/>`;
+  }
+  sc.ticks.forEach(t=>{
+    const yy=y(t), zero=Math.abs(t)<sc.step*1e-6;
+    g+=`<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${(W-padR)}" y2="${yy.toFixed(1)}" stroke="${zero?"#E0594E":"#ECF3F0"}" stroke-width="${zero?1.4:1}"${zero?' stroke-dasharray="4 4"':""}/>`;
+    g+=`<text x="${padL-9}" y="${(yy+3.4).toFixed(1)}" font-size="10" fill="#9DB3AC" text-anchor="end">${gnum(t,sc.step)}</text>`;
+  });
+  if(sc.lo>0)g+=`<text x="${(W-padR)}" y="${(padT-11)}" font-size="9.5" fill="#A9BEB8" text-anchor="end">※縦軸は0起点ではありません（増減を見やすくするため）</text>`;
+
+  /* 期首＋各月をひと続きの線に */
+  const series=[];
+  if(lead)series.push({x:x0,v:openCash/dv,open:true});
+  use.forEach(i=>series.push({x:cxi(i),v:(cashFull[i]||0)/dv,mi:i}));
+  if(lead)g+=`<line x1="${x0.toFixed(1)}" y1="${padT}" x2="${x0.toFixed(1)}" y2="${(padT+plotH).toFixed(1)}" stroke="#DCE9E4" stroke-dasharray="2 4"/>`;
+  if(series.length>1)g+=`<polyline points="${series.map(p=>p.x.toFixed(1)+","+y(p.v).toFixed(1)).join(" ")}" fill="none" stroke="#00A887" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  let minP=series[0];series.forEach(p=>{if(p.v<minP.v)minP=p;});
+  series.forEach(p=>{
+    const isMin=(p===minP&&series.length>1);
+    g+=`<circle cx="${p.x.toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${isMin?4.8:(p.open?3.8:3.4)}" fill="${isMin?"#E0594E":(p.open?"#4E6A63":"#fff")}" stroke="${isMin?"#E0594E":(p.open?"#4E6A63":"#00A887")}" stroke-width="2"/>`;
+    g+=`<text x="${p.x.toFixed(1)}" y="${(y(p.v)-(isMin?14:11)).toFixed(1)}" font-size="9" font-weight="700" fill="${isMin?"#D14A3F":"#17453C"}" text-anchor="middle">${gnum(p.v,sc.step)}</text>`;
+    if(isMin)g+=`<text x="${p.x.toFixed(1)}" y="${(y(p.v)+19).toFixed(1)}" font-size="8.6" font-weight="700" fill="#D14A3F" text-anchor="middle">最少</text>`;
+  });
+  if(lead)g+=`<text x="${x0.toFixed(1)}" y="${(padT+plotH+21)}" font-size="10" font-weight="700" fill="#4E6A63" text-anchor="middle">期首</text>`;
+  months.forEach((mm,i)=>{
+    const on=use.indexOf(i)>=0;
+    g+=`<text x="${cxi(i).toFixed(1)}" y="${(padT+plotH+21)}" font-size="10" fill="${on?"#4E6A63":"#A9BEB8"}" text-anchor="middle">${mm}月</text>`;
+  });
+  $("cfChart").innerHTML=g;
+}
+
+/* ===== エディタ ===== */
+function renderItemList(){
+  const eyeOn=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  const eyeOff=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.9 10.9 0 0112 5c6.5 0 10 7 10 7a17 17 0 01-3.4 4.3M6.6 6.6A17 17 0 002 12s3.5 7 10 7a10.9 10.9 0 004.9-1.2"/></svg>`;
+  const host=$("itemList");host.innerHTML="";
+  ITEMS.forEach((item,idx)=>{
+    const el=document.createElement("div");el.className="item"+(item.hidden?" hidden-item":"");
+    el.innerHTML=`
+      <div class="ord">
+        <button data-up ${idx===0?"disabled":""} aria-label="上へ">▲</button>
+        <button data-down ${idx===ITEMS.length-1?"disabled":""} aria-label="下へ">▼</button>
+      </div>
+      <span class="nm">${escapeHtml(item.label)}</span>
+      <span class="badge ${item.kind==="ratio"?"b-rate":"b-val"}">${item.kind==="ratio"?"比率":"金額"}</span>
+      ${item.hidden?'<span class="badge b-hidden">非表示</span>':''}
+      <span class="src">${escapeHtml(srcText(item))}</span>
+      <span class="sp"></span>
+      <div class="act"><button class="vis" data-vis title="${item.hidden?"表示する":"非表示にする"}">${item.hidden?eyeOff:eyeOn}</button><button data-edit>編集</button><button class="del" data-del>削除</button></div>`;
+    el.querySelector("[data-vis]").onclick=()=>{item.hidden=!item.hidden;afterEdit();};
+    el.querySelector("[data-up]").onclick=()=>{if(idx>0){[ITEMS[idx-1],ITEMS[idx]]=[ITEMS[idx],ITEMS[idx-1]];afterEdit();}};
+    el.querySelector("[data-down]").onclick=()=>{if(idx<ITEMS.length-1){[ITEMS[idx+1],ITEMS[idx]]=[ITEMS[idx],ITEMS[idx+1]];afterEdit();}};
+    el.querySelector("[data-edit]").onclick=()=>openForm(item);
+    el.querySelector("[data-del]").onclick=()=>{
+      const usedByRatio=ITEMS.some(x=>x.kind==="ratio"&&(x.numId===item.id||x.denId===item.id));
+      const usedByRem=ITEMS.some(x=>x.kind==="remainder"&&(x.minusIds||[]).includes(item.id));
+      if(usedByRatio||usedByRem){alert("この行は他の行（比率／その他の差額）の計算に使われています。先にそちらを編集・削除してください。");return;}
+      ITEMS=ITEMS.filter(x=>x.id!==item.id);afterEdit();
+    };
+    host.appendChild(el);
+  });
+}
+function afterEdit(){renderItemList();drawTable();renderPlanCompare();updateViewSummary();if($("viewPanel").classList.contains("open"))renderViewPanel();touchProfile();}
+
+let FORM=null;
+function openForm(editItem){
+  FORM={editId:editItem?editItem.id:null, kind:editItem?editItem.kind:"value",
+        selected:new Set(editItem&&editItem.source&&editItem.source.type==="accounts"?editItem.source.names:[]),
+        minus:new Set(editItem&&editItem.kind==="remainder"?(editItem.minusIds||[]):[])};
+  const host=$("formHost");
+  const k=FORM.kind;
+  const metricOpts=(sel)=>Object.keys(METRIC_LABEL).map(key=>`<option value="${key}" ${sel===key?"selected":""}>${METRIC_LABEL[key]}</option>`).join("");
+  const subOpts=(sel)=>SUBTOTAL_KEYS.map(key=>`<option value="${key}" ${sel===key?"selected":""}>${METRIC_LABEL[key]}</option>`).join("");
+  const baseOpts=(sel)=>["fixed","cogs","sales","ordinary","op"].map(key=>`<option value="${key}" ${sel===key?"selected":""}>${METRIC_LABEL[key]}</option>`).join("");
+  host.innerHTML=`
+   <div class="form">
+     <div class="tabs">
+       <button data-k="value" aria-selected="${k==='value'}">金額</button>
+       <button data-k="subtotal" aria-selected="${k==='subtotal'}">小計</button>
+       <button data-k="remainder" aria-selected="${k==='remainder'}">その他（差額）</button>
+       <button data-k="ratio" aria-selected="${k==='ratio'}">比率（％）</button>
+     </div>
+     <div class="fld"><label>行のラベル</label><input type="text" id="fLabel" placeholder="例）人件費" value="${editItem?escapeHtml(editItem.label):""}"></div>
+
+     <div id="fBodyValue" class="src-box ${k==='value'?'show':''}">
+       <div class="fld"><label>この行の内容</label>
+         <div class="radio-row">
+           <label><input type="radio" name="vsrc" value="metric" ${!(editItem&&editItem.source&&editItem.source.type==='accounts')?"checked":""}> 主要指標から選ぶ</label>
+           <label><input type="radio" name="vsrc" value="accounts" ${editItem&&editItem.source&&editItem.source.type==='accounts'?"checked":""}> 勘定科目を合算する</label>
+         </div>
+       </div>
+       <div class="fld src-box" id="boxMetric"><label>主要指標</label><select id="fMetric">${metricOpts(editItem&&editItem.source&&editItem.source.type==='metric'?editItem.source.key:'sales')}</select></div>
+       <div class="fld src-box" id="boxAccounts"><label>合算する勘定科目（複数選択可）</label>
+         <input class="picker-search" id="accSearch" placeholder="科目名で絞り込み…">
+         <div class="picker" id="accPicker"></div>
+         <div class="sum-preview" id="sumPreview"></div>
+       </div>
+     </div>
+
+     <div id="fBodySub" class="src-box ${k==='subtotal'?'show':''}">
+       <div class="fld"><label>小計の種類（弥生の集計値に一致）</label><select id="fSub">${subOpts(editItem&&editItem.kind==='subtotal'?editItem.metric:'gross')}</select></div>
+     </div>
+
+     <div id="fBodyRem" class="src-box ${k==='remainder'?'show':''}">
+       <div class="fld"><label>基準（ここから差し引きます）</label><select id="fBase">${baseOpts(editItem&&editItem.kind==='remainder'?editItem.baseMetric:'fixed')}</select></div>
+       <div class="fld"><label>差し引く行（複数選択可）</label><div class="picker" id="minusPicker"></div>
+         <div class="sum-preview" id="remPreview"></div></div>
+     </div>
+
+     <div id="fBodyRatio" class="src-box ${k==='ratio'?'show':''}">
+       <div class="fld"><label>分子（割られる行）</label><select id="fNum"></select></div>
+       <div class="fld"><label>分母（基準の行）</label><select id="fDen"></select></div>
+     </div>
+
+     <div class="form-actions">
+       <button class="btn btn-navi btn-sm" id="fSave">保存</button>
+       <button class="btn btn-ghost btn-sm" id="fCancel">キャンセル</button>
+     </div>
+   </div>`;
+  host.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{FORM.kind=b.dataset.k;showBodies();host.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x.dataset.k===FORM.kind));});
+  host.querySelectorAll("input[name=vsrc]").forEach(r=>r.onchange=syncSrc);
+  $("accSearch").oninput=renderPicker;
+  fillRatioSelects(editItem);
+  renderMinusPicker();
+  showBodies();
+  $("fCancel").onclick=()=>{host.innerHTML="";FORM=null;};
+  $("fSave").onclick=saveForm;
+  $("fLabel").focus();
+}
+function showBodies(){
+  $("fBodyValue").classList.toggle("show",FORM.kind==="value");
+  $("fBodySub").classList.toggle("show",FORM.kind==="subtotal");
+  $("fBodyRem").classList.toggle("show",FORM.kind==="remainder");
+  $("fBodyRatio").classList.toggle("show",FORM.kind==="ratio");
+  if(FORM.kind==="value")syncSrc();
+  if(FORM.kind==="remainder")renderMinusPicker();
+}
+function renderMinusPicker(){
+  const box=$("minusPicker");if(!box)return;
+  const opts=ITEMS.filter(it=>(it.kind==="value"||it.kind==="remainder")&&it.id!==FORM.editId);
+  box.innerHTML="";
+  if(!opts.length){box.innerHTML='<div class="sec">先に金額の行を追加してください</div>';}
+  opts.forEach(o=>{
+    const el=document.createElement("label");el.className="opt";
+    el.innerHTML=`<input type="checkbox" ${FORM.minus.has(o.id)?"checked":""}><span>${escapeHtml(o.label)}</span>`;
+    el.querySelector("input").onchange=e=>{e.target.checked?FORM.minus.add(o.id):FORM.minus.delete(o.id);};
+    box.appendChild(el);
+  });
+}
+function syncSrc(){
+  if(!FORM)return;
+  const useAcc=document.querySelector("input[name=vsrc]:checked")?.value==="accounts";
+  $("boxMetric").classList.toggle("show",!useAcc);
+  $("boxAccounts").classList.toggle("show",useAcc);
+  if(useAcc)renderPicker();
+}
+function renderPicker(){
+  const q=($("accSearch").value||"").trim();
+  const box=$("accPicker");box.innerHTML="";
+  const bySec={};DATA.accounts.forEach(a=>{if(q&&!a.name.includes(q))return;(bySec[a.section]=bySec[a.section]||[]).push(a);});
+  Object.keys(bySec).forEach(sec=>{
+    const h=document.createElement("div");h.className="sec";h.textContent=sec||"その他";box.appendChild(h);
+    bySec[sec].forEach(a=>{
+      const o=document.createElement("label");o.className="opt";
+      o.innerHTML=`<input type="checkbox" ${FORM.selected.has(a.name)?"checked":""}><span>${escapeHtml(a.name)}</span><span class="amt num">${a.year.toLocaleString("ja-JP")}</span>`;
+      o.querySelector("input").onchange=e=>{e.target.checked?FORM.selected.add(a.name):FORM.selected.delete(a.name);updateSum();};
+      box.appendChild(o);
+    });
+  });
+  updateSum();
+}
+function updateSum(){
+  let y=0;FORM.selected.forEach(nm=>{const a=DATA.accounts.find(x=>x.name===nm);if(a)y+=a.year;});
+  $("sumPreview").textContent=`選択 ${FORM.selected.size} 科目／年間合計 ${y.toLocaleString("ja-JP")} 円`;
+}
+function fillRatioSelects(editItem){
+  const opts=ITEMS.filter(it=>it.kind!=="ratio"&&it.id!==FORM.editId);
+  const mk=sel=>opts.map(o=>`<option value="${o.id}" ${sel===o.id?"selected":""}>${escapeHtml(o.label)}</option>`).join("");
+  $("fNum").innerHTML=mk(editItem&&editItem.kind==="ratio"?editItem.numId:(opts[0]&&opts[0].id));
+  const salesItem=opts.find(o=>o.source&&o.source.type==="metric"&&o.source.key==="sales");
+  $("fDen").innerHTML=mk(editItem&&editItem.kind==="ratio"?editItem.denId:(salesItem?salesItem.id:(opts[0]&&opts[0].id)));
+}
+function saveForm(){
+  const label=$("fLabel").value.trim();
+  if(!label){alert("ラベルを入力してください。");return;}
+  let item;
+  if(FORM.kind==="value"){
+    const useAcc=document.querySelector("input[name=vsrc]:checked").value==="accounts";
+    if(useAcc){if(FORM.selected.size===0){alert("合算する勘定科目を1つ以上選んでください。");return;}item={kind:"value",label,source:{type:"accounts",names:[...FORM.selected]}};}
+    else item={kind:"value",label,source:{type:"metric",key:$("fMetric").value}};
+  }else if(FORM.kind==="subtotal"){
+    item={kind:"subtotal",label,metric:$("fSub").value};
+  }else if(FORM.kind==="remainder"){
+    item={kind:"remainder",label,baseMetric:$("fBase").value,minusIds:[...FORM.minus]};
+  }else{
+    const numId=$("fNum").value,denId=$("fDen").value;
+    if(!numId||!denId){alert("比率には金額・小計の行が必要です。先にそれらを追加してください。");return;}
+    item={kind:"ratio",label,numId,denId};
+  }
+  if(FORM.editId){const i=ITEMS.findIndex(x=>x.id===FORM.editId);const old=ITEMS[i]||{};if(old.plan!=null)item.plan=old.plan;if(old.hidden)item.hidden=true;item.id=FORM.editId;ITEMS[i]=item;}
+  else{item.id=uid();ITEMS.push(item);}
+  $("formHost").innerHTML="";FORM=null;afterEdit();
+}
+
+/* 設定の入出力 */
+function exportCfg(){
+  const data=Object.assign({version:2,kind:"carnavi-config",company:currentCompany},currentProfileData());
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  downloadBlob(blob,(currentCompany?currentCompany.replace(/[\\\/:*?"<>|\s]+/g,"_")+"_":"")+"カーナビ表示設定.json");
+}
+function importCfg(file){
+  const r=new FileReader();r.onload=e=>{try{const o=JSON.parse(e.target.result);if(!o.items||!Array.isArray(o.items))throw 0;applyProfileData(o);render();}catch(_){alert("設定ファイルを読み込めませんでした。");}};r.readAsText(file);
+}
+
+/* ===== 入力 ===== */
+function showErr(m){const e=$("err");e.textContent="読み込めませんでした："+m;e.style.display="block";}
+function clearErr(){$("err").style.display="none";}
+function handleFile(file){
+  clearErr();$("dropFiles").textContent="読込中… "+file.name;
+  const r=new FileReader();
+  r.onerror=()=>showErr("ファイルを開けませんでした。");
+  if(/\.json$/i.test(file.name||"")){
+    r.onload=e=>{try{importBundle(JSON.parse(e.target.result));}catch(err){showErr(String(err&&err.message||"内容を読み取れませんでした。"));$("dropFiles").textContent="";}};
+    r.readAsText(file);return;
+  }
+  r.onload=e=>{try{IS_SAMPLE=false;DATA=buildFromWorkbook(e.target.result);onDataLoaded();}catch(err){showErr(err.message||String(err));$("dropFiles").textContent="";}};
+  r.readAsArrayBuffer(file);
+}
+/* 書き出したJSON（データ入り／設定のみ）を復元する */
+function importBundle(o){
+  if(o&&o.data&&o.data.metrics&&Array.isArray(o.data.months)){
+    IS_SAMPLE=false;DATA=o.data;PENDING_PROFILE=o.profile||null;onDataLoaded();return;
+  }
+  if(o&&Array.isArray(o.items)){
+    if(!DATA)throw new Error("これは「表示設定」だけのファイルです。先に弥生のExcel、または『データを書き出す』で作ったJSONを読み込んでください。");
+    applyProfileData(o);render();return;
+  }
+  throw new Error("カーナビのファイルではないようです。");
+}
+
+window.addEventListener("DOMContentLoaded",()=>{
+  const drop=$("drop"),fileInput=$("file");
+  drop.addEventListener("click",()=>fileInput.click());
+  drop.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fileInput.click();}});
+  fileInput.addEventListener("change",e=>{if(e.target.files[0])handleFile(e.target.files[0]);});
+  ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("hot");}));
+  ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("hot");}));
+  drop.addEventListener("drop",e=>{const f=e.dataTransfer.files[0];if(f)handleFile(f);});
+
+  $("sampleBtn").addEventListener("click",()=>{clearErr();IS_SAMPLE=true;DATA=JSON.parse(JSON.stringify(SAMPLE));onDataLoaded();});
+  $("resetBtn").addEventListener("click",()=>{DATA=null;DS_KEY="";$("viewPanel").classList.remove("open");$("viewBar").style.display="none";OPEN={cash:null,loan:null};syncOpenFields();$("dash").style.display="none";$("intro").style.display="block";$("dropFiles").textContent="";fileInput.value="";$("printBtn").style.display="none";$("saveBtn").style.display="none";$("orientToggle").style.display="none";$("fsToggle").style.display="none";renderSavedList();window.scrollTo({top:0,behavior:"smooth"});});
+  /* 印刷／PDF保存の既定ファイル名は document.title から決まるので、印刷の直前だけ差し替える */
+  let _titleBak="";
+  function applyPrintTitle(){if(!DATA)return;if(!_titleBak)_titleBak=document.title;document.title=docBaseName();}
+  function restoreTitle(){if(_titleBak){document.title=_titleBak;_titleBak="";}}
+  window.addEventListener("beforeprint",applyPrintTitle);
+  window.addEventListener("afterprint",restoreTitle);
+  $("printBtn").addEventListener("click",()=>{applyPrintTitle();setTimeout(()=>{window.print();setTimeout(restoreTitle,800);},0);});
+  $("oPortrait").addEventListener("click",()=>setOrientation("portrait"));
+  $("oLandscape").addEventListener("click",()=>setOrientation("landscape"));
+  $("fsS").addEventListener("click",()=>setFs(1));
+  $("fsM").addEventListener("click",()=>setFs(1.2));
+  $("fsL").addEventListener("click",()=>setFs(1.4));
+  $("saveBtn").addEventListener("click",saveCurrentProfile);
+  $("clearAllBtn").addEventListener("click",()=>{if(confirm("このPCに保存されているカーナビのデータをすべて削除しますか？\nこの操作は取り消せません。")){try{localStorage.removeItem(DATA_KEY);}catch(e){}renderSavedList();}});
+  $("cfModeActual").addEventListener("click",()=>{if(!DATA||!DATA.cf)return;CF_MODE="actual";renderCF();touchProfile();});
+  $("cfModeSimple").addEventListener("click",()=>{if(!DATA)return;CF_MODE="simple";renderCF();touchProfile();});
+  $("cfCfgToggle").addEventListener("click",()=>{const c=$("cfConfig");c.classList.toggle("open");if(c.classList.contains("open"))renderCfConfig();});
+  $("viewToggle").addEventListener("click",()=>{
+    const pn=$("viewPanel");pn.classList.toggle("open");
+    if(pn.classList.contains("open"))renderViewPanel();
+  });
+  renderSavedList();
+  $("kpiToggle").addEventListener("click",()=>{const p=$("kpiPicker");p.classList.toggle("open");if(p.classList.contains("open"))renderKpiPicker();});
+  $("planToggle").addEventListener("click",()=>{const p=$("planEditor");p.classList.toggle("open");if(p.classList.contains("open"))renderPlanEditor();});
+  function setUnit(u){UNIT=u;syncUnitButtons();if(DATA){syncOpenFields();render();touchProfile();}}
+  $("uYen").addEventListener("click",()=>setUnit("yen"));
+  $("uK").addEventListener("click",()=>setUnit("k"));
+  $("uM").addEventListener("click",()=>setUnit("m"));
+  [["openCash","cash"],["openLoan","loan"]].forEach(([id,k])=>{
+    $(id).addEventListener("input",()=>{OPEN_AUTO=false;OPEN[k]=readOpenField(id);if(DATA)renderCF();touchProfile();});
+    $(id).addEventListener("blur",()=>{$(id).value=fmtInput(OPEN[k]);});
+  });
+
+  $("editToggle").addEventListener("click",()=>{const ed=$("editor");ed.classList.toggle("open");if(ed.classList.contains("open")){renderItemList();renderProfileList();}});
+  $("addItemBtn").addEventListener("click",()=>openForm(null));
+  document.querySelectorAll(".chip[data-preset]").forEach(c=>c.onclick=()=>{ITEMS=c.dataset.preset==="cost"?buildCost():buildStandard();$("formHost").innerHTML="";FORM=null;afterEdit();});
+  $("exportCfg").addEventListener("click",exportCfg);
+  $("importCfg").addEventListener("click",()=>$("cfgFile").click());
+  $("cfgFile").addEventListener("change",e=>{if(e.target.files[0])importCfg(e.target.files[0]);});
+});
+</script>
+</body>
+</html>
