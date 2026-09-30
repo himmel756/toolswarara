@@ -4,7 +4,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>訪問資料 作成ツール v1.0</title>
+<title>訪問資料 作成ツール v1.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
@@ -145,7 +145,7 @@
 <div class="wrap">
 
   <header class="title">
-    <h1>訪問資料 作成ツール<span class="ver">v1.0</span></h1>
+    <h1>訪問資料 作成ツール<span class="ver">v1.1</span></h1>
     <div class="sub">弥生の試算表PDF（BS・PL・前期比較）と儲けのカーナビを1つにまとめ、<br>印刷時にA3とA4が自動で選ばれるPDFを作ります。</div>
   </header>
   <div class="newtab" id="newtab">保存がうまくいかないときは <a href="https://himmel756.github.io/toolswarara/houmon.html" target="_blank" rel="noopener">新しいタブで開く</a></div>
@@ -179,7 +179,7 @@
 
   <section class="step">
     <h2><span class="no">4</span>PDFを保存する</h2>
-    <div class="outs" id="outs"><div class="empty">BS・PL・前期比較のPDFを選ぶと、ここに保存ボタンが出ます。</div></div>
+    <div class="outs" id="outs"><div class="empty">PDFを選ぶと、ここに保存ボタンが出ます（そろっていない資料があっても、ある分だけで作れます）。</div></div>
     <div class="note">
       <b>印刷のしかた</b>
       <ul>
@@ -335,19 +335,23 @@
     const month = $('month').value.trim().replace(/月$/, '') || '○';
     const p = ['bs','pl','zenki'].map(k => files[k] && files[k].period).find(Boolean);
     const wareki = p ? `R${p.year}.${month}` : `R○.${month}`;
-    const hasBase = ['bs','pl','zenki'].every(k => files[k] && !files[k].error);
-    const hasNavi = files.navi && !files.navi.error;
+    const ok = k => files[k] && !files[k].error;
+    const name = k => KINDS.find(x => x.key === k).name;
+    const base = ['bs','pl','zenki'].filter(ok);
+    const all = [...base, ...(ok('navi') ? ['navi'] : [])];
+    // 足りない資料があっても、ある分だけで作る
+    const lack = keys => { const miss = keys.filter(k => !ok(k)); return miss.length ? `（${miss.map(name).join('・')}なし）` : ''; };
     const list = [];
-    if (hasBase && hasNavi) list.push({ fn:`${corp}${month}月 訪問資料（印刷用）.pdf`, keys:['bs','pl','zenki','navi'], desc:'印刷はこれ1つで済みます' });
-    if (hasBase) list.push({ fn:`${corp}${month}月まで資料.pdf`, keys:['bs','pl','zenki'], desc:'月次試算表（BS → PL → 前期比較）' });
-    if (hasNavi) list.push({ fn:`儲けのカーナビ_${corp}_${wareki}.pdf`, keys:['navi'], desc:'カーナビ単体（印刷設定を入れたもの）' });
+    if (all.length >= 2) list.push({ fn:`${corp}${month}月 訪問資料（印刷用）.pdf`, keys:all, desc:'印刷はこれ1つで済みます' + lack(['bs','pl','zenki','navi']) });
+    if (base.length) list.push({ fn:`${corp}${month}月まで資料.pdf`, keys:base, desc:'月次試算表（' + base.map(name).join(' → ') + '）' + lack(['bs','pl','zenki']) });
+    if (ok('navi')) list.push({ fn:`儲けのカーナビ_${corp}_${wareki}.pdf`, keys:['navi'], desc:'カーナビ単体（印刷設定を入れたもの）' });
     return list;
   }
 
   function renderOuts(){
     const list = outputs();
     if (!list.length){
-      $('outs').innerHTML = `<div class="empty">BS・PL・前期比較のPDFを選ぶと、ここに保存ボタンが出ます。</div>`;
+      $('outs').innerHTML = `<div class="empty">PDFを選ぶと、ここに保存ボタンが出ます（そろっていない資料があっても、ある分だけで作れます）。</div>`;
       return;
     }
     $('outs').innerHTML = list.map((o, i) => {
