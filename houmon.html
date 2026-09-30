@@ -4,7 +4,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>訪問資料 作成ツール v1.1</title>
+<title>訪問資料 作成ツール v2.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
@@ -139,33 +139,66 @@
   }
   .note b{color:var(--ink);}
   .note ul{margin:4px 0 0;padding-left:1.2em;}
+
+  #navi .pick{
+    font:inherit;font-size:.8rem;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:4px 12px;cursor:pointer;color:var(--accent-deep);
+  }
+  .navi-box{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start;}
+  .navi-box .thumb{
+    width:150px;flex:none;border:1px solid var(--line);border-radius:6px;background:#fff;
+    box-shadow:0 2px 8px rgba(0,0,0,.06);cursor:zoom-in;
+  }
+  .navi-box .thumb.big{width:100%;cursor:zoom-out;}
+  .navi-box .body{flex:1;min-width:240px;font-size:.84rem;line-height:1.75;}
+  .navi-box .src{font-weight:700;word-break:break-all;}
+  .navi-box .status{font-size:.78rem;color:var(--ink-soft);}
+  .navi-box .status.err{color:#b06a2c;}
+  .nums{border-collapse:collapse;margin:8px 0;font-size:.82rem;}
+  .nums th{text-align:left;font-weight:500;color:var(--ink-soft);padding:2px 14px 2px 0;}
+  .nums td{text-align:right;font-variant-numeric:tabular-nums;padding:2px 0;}
+  .nums-note{font-size:.74rem;color:var(--ink-soft);}
+  .open{margin-top:10px;}
+  .open .row{gap:10px;}
+  .open .fld{min-width:150px;}
+  .open .fld input{text-align:right;font-variant-numeric:tabular-nums;}
+  .open .hint{font-size:.74rem;color:var(--ink-soft);margin-top:4px;}
+  details.manual{margin-top:14px;font-size:.8rem;color:var(--ink-soft);}
+  details.manual summary{cursor:pointer;}
+  details.manual ol.how{margin-top:6px;font-size:.8rem;}
+  #naviFrame{position:fixed;left:-20000px;top:0;height:1600px;border:0;background:#fff;}
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <header class="title">
-    <h1>訪問資料 作成ツール<span class="ver">v1.1</span></h1>
+    <h1>訪問資料 作成ツール<span class="ver">v2.0</span></h1>
     <div class="sub">弥生の試算表PDF（BS・PL・前期比較）と儲けのカーナビを1つにまとめ、<br>印刷時にA3とA4が自動で選ばれるPDFを作ります。</div>
   </header>
   <div class="newtab" id="newtab">保存がうまくいかないときは <a href="https://himmel756.github.io/toolswarara/houmon.html" target="_blank" rel="noopener">新しいタブで開く</a></div>
 
   <section class="step">
     <h2><span class="no">1</span>試算表のPDFを選ぶ</h2>
-    <p class="lead">弥生から書き出した <b>○○BS.pdf</b>・<b>○○PL.pdf</b>・<b>○○前期比較.pdf</b> をまとめてドロップしてください（ファイル名で自動で振り分けます）。</p>
-    <div class="drop" id="drop">ここにPDFをドロップ、または <b>クリックして選択</b></div>
-    <input type="file" id="multi" accept="application/pdf" multiple hidden>
+    <p class="lead">弥生から書き出した <b>○○BS.pdf</b>・<b>○○PL.pdf</b>・<b>○○前期比較.pdf</b>（カーナビを作るなら <b>○○報告BSPL.xlsx</b> も）をまとめてドロップしてください。ファイル名で自動で振り分けます。</p>
+    <div class="drop" id="drop">ここにPDF・Excelをドロップ、または <b>クリックして選択</b></div>
+    <input type="file" id="multi" accept="application/pdf,.xlsx,.xls" multiple hidden>
     <div class="slots" id="slots"></div>
   </section>
 
   <section class="step">
-    <h2><span class="no">2</span>儲けのカーナビをPDFにする（任意）</h2>
-    <ol class="how">
-      <li><a href="https://sites.google.com/view/toolswarara/mokenavi" target="_blank" rel="noopener">儲けのカーナビ</a> を開き、<b>○○報告BSPL.xlsx</b> を読み込む</li>
-      <li>期首残高（現預金・借入金）が空欄なら、BSの「前期繰越」の値を入れる</li>
-      <li>印刷の向きを <b>縦</b> にして「印刷」→ 送信先を <b>「PDFに保存」</b></li>
-      <li>保存したPDFを上の枠（またはカーナビ欄の「選択」）へ</li>
-    </ol>
+    <h2><span class="no">2</span>儲けのカーナビを作る（任意）</h2>
+    <p class="lead">弥生の「残高試算表（年間推移）」を書き出した <b>○○報告BSPL.xlsx</b> を上の枠にドロップすると、カーナビ（A3）を自動で作ります。</p>
+    <div id="navi">
+      <button class="pick" id="xlsxPick" type="button">Excelを選択</button>
+    </div>
+    <details class="manual">
+      <summary>カーナビの画面から印刷したPDFを使う場合</summary>
+      <ol class="how">
+        <li><a href="https://sites.google.com/view/toolswarara/mokenavi" target="_blank" rel="noopener">儲けのカーナビ</a> でExcelを読み込み、向きを <b>縦</b> にして「印刷」→ 送信先を <b>「PDFに保存」</b></li>
+        <li>保存したPDFを上の枠（またはカーナビ欄の「選択」）へ。こちらが優先されます</li>
+      </ol>
+    </details>
   </section>
 
   <section class="step">
@@ -229,6 +262,7 @@
   async function addFiles(list){
     const unknown = [];
     for (const f of list){
+      if (/\.xlsx?$/i.test(f.name)){ await loadExcel(f); continue; }
       if (!/\.pdf$/i.test(f.name)) continue;
       const k = kindOf(f.name);
       if (!k){ unknown.push(f.name); continue; }
@@ -239,7 +273,7 @@
 
   async function setFile(key, f){
     const bytes = new Uint8Array(await f.arrayBuffer());
-    const entry = { file:f, bytes, sizes:[], period:null, error:null };
+    const entry = { name:f.name, bytes, sizes:[], period:null, error:null };
     try{
       const doc = await PDFDocument.load(bytes, { ignoreEncryption:true });
       entry.sizes = doc.getPages().map(pageSize);
@@ -282,10 +316,181 @@
     if ($('corp').value.trim()) return;
     for (const k of ['bs','pl','zenki']){
       const e = files[k]; if (!e) continue;
-      const base = e.file.name.replace(/\.pdf$/i, '');
+      const base = e.name.replace(/\.pdf$/i, '');
       const name = k === 'zenki' ? base.replace(/前期比較.*$/, '') : base.replace(/(BS|PL)$/i, '');
       if (name && name !== base){ $('corp').value = name.trim(); return; }
     }
+  }
+
+  /* ---------- 儲けのカーナビ（Excelから作成） ----------
+     mokenavi.html を見えない枠で動かし、印刷用の見た目を画像にして A3 の1ページに貼る。
+     枠の中では localStorage を読むだけにする（登録済みの表示形式は使うが、顧問先のデータは保存しない）。 */
+  const A3 = { w:841.89, h:1190.55 }, MARGIN = 25.51;          // 9mm（カーナビの印刷設定と同じ）
+  const PRINT_W = { portrait:1054, landscape:1519 };             // A3 から余白を引いた幅（CSS px）
+  let NAVI = null;    // { name, info, img, error, busy }
+  let frameReady = null;
+
+  const FRAME_HEAD = `<script>(function(){
+    var real=null;try{real=window.localStorage;}catch(e){}
+    var mem={};
+    var shim={getItem:function(k){return (k in mem)?mem[k]:(real?real.getItem(k):null);},
+              setItem:function(k,v){mem[k]=String(v);},removeItem:function(k){mem[k]=null;},
+              key:function(){return null;},clear:function(){},length:0};
+    try{Object.defineProperty(window,'localStorage',{configurable:true,get:function(){return shim;}});}catch(e){}
+    window.alert=function(){};window.confirm=function(){return false;};
+  })();<\/script>`;
+  const FRAME_TAIL = `<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"><\/script>
+  <script>
+    window.__navi={
+      load:function(buf){IS_SAMPLE=false;DATA=buildFromWorkbook(buf);onDataLoaded();return this.info();},
+      setOpen:function(cash,loan){OPEN={cash:cash,loan:loan};OPEN_AUTO=false;syncOpenFields();render();return this.info();},
+      info:function(){
+        var ai=actualIdx(),last=ai[ai.length-1];
+        return {company:DATA.company,period:actualPeriodText(),months:ai.length,lastMonth:last==null?null:DATA.months[last],
+                sales:DATA.metrics.sales.year,op:DATA.metrics.op.year,
+                cash:(DATA.cf&&last!=null)?DATA.cf.cash.monthly[last]:null,hasCF:!!DATA.cf,
+                open:{cash:OPEN.cash,loan:OPEN.loan},openAuto:OPEN_AUTO,orient:PRINT_ORIENT};
+      }
+    };
+  <\/script>`;
+
+  function loadFrame(){
+    if (frameReady) return frameReady;
+    frameReady = (async () => {
+      const res = await fetch('mokenavi.html', { cache:'no-cache' });
+      if (!res.ok) throw new Error('儲けのカーナビ（mokenavi.html）を読み込めませんでした');
+      let html = await res.text();
+      html = html.replace(/<head>/i, '<head>' + FRAME_HEAD).replace(/<\/body>/i, FRAME_TAIL + '</body>');
+      const fr = document.createElement('iframe');
+      fr.id = 'naviFrame'; fr.style.width = PRINT_W.portrait + 'px';
+      fr.setAttribute('aria-hidden', 'true'); fr.tabIndex = -1;
+      document.body.appendChild(fr);
+      await new Promise((ok, ng) => { fr.onload = ok; fr.onerror = ng; fr.srcdoc = html; });
+      const w = fr.contentWindow;
+      for (let i = 0; i < 100 && !(w.__navi && w.XLSX && w.html2canvas); i++) await new Promise(r => setTimeout(r, 100));
+      if (!w.__navi || !w.XLSX || !w.html2canvas) throw new Error('カーナビの準備ができませんでした（ネットワークを確認してください）');
+      return fr;
+    })();
+    frameReady.catch(() => { frameReady = null; });
+    return frameReady;
+  }
+
+  async function loadExcel(f){
+    NAVI = { name:f.name, info:null, img:null, error:null, busy:true };
+    renderNavi();
+    try{
+      const fr = await loadFrame();
+      // 枠の中の ArrayBuffer に写す（別の枠の ArrayBuffer だと SheetJS が形式を判別できない）
+      const src = new Uint8Array(await f.arrayBuffer());
+      const u = new fr.contentWindow.Uint8Array(src.length); u.set(src);
+      NAVI.info = fr.contentWindow.__navi.load(u.buffer);
+      await makeNavi();
+    }catch(e){
+      console.error(e);
+      NAVI.error = e.message || String(e); NAVI.busy = false;
+      renderNavi();
+    }
+  }
+
+  async function setOpening(){
+    if (!NAVI || !NAVI.info) return;
+    const num = id => { const v = $(id).value.replace(/[,\s円]/g, '').replace(/^[△▲]/, '-'); return v === '' || isNaN(+v) ? null : +v; };
+    const fr = await loadFrame();
+    NAVI.info = fr.contentWindow.__navi.setOpen(num('openCash'), num('openLoan'));
+    NAVI.openManual = true; NAVI.busy = true; renderNavi();
+    await makeNavi();
+  }
+
+  /* 印刷時の見た目（@media print の中身）を画面用として当ててから画像にする */
+  function applyPrintLook(d){
+    if (d.getElementById('__printLook')) return;
+    let css = '';
+    for (const sh of d.styleSheets){
+      let rules; try{ rules = sh.cssRules; }catch(e){ continue; }
+      for (const r of rules){
+        if (r instanceof d.defaultView.CSSMediaRule && /print/.test(r.media.mediaText))
+          css += [...r.cssRules].map(x => x.cssText).join('\n') + '\n';
+      }
+    }
+    const st = d.createElement('style'); st.id = '__printLook'; st.textContent = css;
+    d.head.appendChild(st);
+  }
+
+  async function makeNavi(){
+    try{
+      const fr = await loadFrame(), w = fr.contentWindow, d = w.document;
+      const land = NAVI.info.orient === 'landscape';
+      fr.style.width = PRINT_W[land ? 'landscape' : 'portrait'] + 'px';
+      applyPrintLook(d);
+      if (d.fonts && d.fonts.ready) await d.fonts.ready;
+      await new Promise(r => setTimeout(r, 150));   // 表示の反映を待つ
+      // 中身の高さぶんだけ写す（枠の高さのままだと下に余白が入る）
+      const h = Math.ceil(d.querySelector('.wrap').getBoundingClientRect().bottom + w.scrollY);
+      fr.style.height = h + 'px';
+      const canvas = await w.html2canvas(d.body, {
+        scale:2.5, backgroundColor:'#ffffff', logging:false,
+        width: parseInt(fr.style.width), height:h, windowWidth: parseInt(fr.style.width), windowHeight:h,
+      });
+      const jpg = canvas.toDataURL('image/jpeg', 0.92);
+
+      const pdf = await PDFDocument.create();
+      const pw = land ? A3.h : A3.w, ph = land ? A3.w : A3.h;
+      const page = pdf.addPage([pw, ph]);
+      const img = await pdf.embedJpg(jpg);
+      const k = Math.min((pw - MARGIN * 2) / img.width, (ph - MARGIN * 2) / img.height);
+      const iw = img.width * k, ih = img.height * k;
+      page.drawImage(img, { x:(pw - iw) / 2, y:ph - MARGIN - ih, width:iw, height:ih });
+      const bytes = await pdf.save();
+
+      NAVI.img = jpg; NAVI.busy = false; NAVI.error = null;
+      // 印刷したPDFを入れてある場合はそちらを優先する
+      NAVI.entry = { name:'Excelから作成（' + NAVI.name + '）', bytes, sizes:[{ paper:'A3', dir: land ? '横' : '縦' }], generated:true };
+      if (!files.navi || files.navi.generated) files.navi = NAVI.entry;
+      if (!$('corp').value.trim() && NAVI.info.company) $('corp').value = NAVI.info.company;
+      if (!$('month').value.trim() && NAVI.info.lastMonth) $('month').value = NAVI.info.lastMonth;
+    }catch(e){
+      console.error(e);
+      NAVI.error = 'カーナビを作れませんでした：' + (e.message || e); NAVI.busy = false;
+    }
+    render();
+  }
+
+  function yen(v){ return v == null ? '—' : Math.round(v).toLocaleString('ja-JP') + ' 円'; }
+
+  function renderNavi(){
+    const host = $('navi');
+    if (!NAVI){ host.innerHTML = `<button class="pick" id="xlsxPick" type="button">Excelを選択</button>`; return; }
+    const i = NAVI.info;
+    const status = NAVI.busy ? '<div class="status">作成中…（はじめてのときは少し時間がかかります）</div>'
+                 : NAVI.error ? `<div class="status err">${esc(NAVI.error)}</div>`
+                 : files.navi && !files.navi.generated ? '<div class="status">※ 印刷したカーナビのPDFが入っているため、そちらを使います（外すとこちらを使います）</div>'
+                 : '<div class="status">✓ カーナビ（A3' + (i && i.orient === 'landscape' ? '横' : '縦') + '）を作りました。印刷用PDFに入ります</div>';
+    const openHint = !i ? '' : NAVI.openManual ? '入力した値でカーナビを作りました（初月の「前月繰越」になります）。' : i.openAuto ? '弥生の「前期繰越」から自動で入れました。'
+                   : (i.open.cash == null && i.open.loan == null) ? '空欄です。BSのPDFの「前期繰越」の列から、現・預金合計と借入金（「借入」を含む科目の合計）を入れてください。'
+                   : '入っている値を使っています（登録済みの表示形式から）。BSの「前期繰越」と合っているか確認してください。';
+    host.innerHTML = `
+      <div class="navi-box">
+        ${NAVI.img ? `<img class="thumb" id="naviThumb" src="${NAVI.img}" alt="カーナビの見本" title="クリックで拡大">` : ''}
+        <div class="body">
+          <div class="src">${esc(NAVI.name)}</div>
+          ${i ? `<div>${esc(i.company || '')}　${esc(i.period || '')}（実績 ${i.months}か月）</div>
+          <table class="nums">
+            <tr><th>売上高（累計）</th><td>${yen(i.sales)}</td></tr>
+            <tr><th>営業利益（累計）</th><td>${yen(i.op)}</td></tr>
+            <tr><th>${i.lastMonth ? i.lastMonth + '月末' : '月末'} 現預金</th><td>${i.hasCF ? yen(i.cash) : '（BSのシートなし）'}</td></tr>
+          </table>
+          <div class="nums-note">PL・BSのPDFと同じ数字になっているか確認してください。</div>
+          ${i.hasCF ? `<div class="open">
+            <div class="row">
+              <div class="fld"><label for="openCash">期首 現預金（円）</label><input id="openCash" type="text" inputmode="numeric" value="${i.open.cash == null ? '' : Math.round(i.open.cash).toLocaleString('ja-JP')}"></div>
+              <div class="fld"><label for="openLoan">期首 借入金（円）</label><input id="openLoan" type="text" inputmode="numeric" value="${i.open.loan == null ? '' : Math.round(i.open.loan).toLocaleString('ja-JP')}"></div>
+            </div>
+            <div class="hint">${esc(openHint)}</div>
+          </div>` : ''}` : ''}
+          ${status}
+          <button class="pick" id="xlsxPick" type="button" style="margin-top:8px">別のExcelを選択</button>
+        </div>
+      </div>`;
   }
 
   /* ---------- 表示 ---------- */
@@ -303,17 +508,18 @@
       const e = files[k.key];
       const msg = e ? checkMsg(k.key, e) : '';
       const cls = e ? (msg ? 'warn' : 'ok') : '';
-      return `<div class="slot ${cls}">
+      return `<div class="slot ${cls}" ${e && e.generated ? 'data-gen="1"' : ''}>
         <div class="nm">${esc(k.name)}</div>
         <div class="exp">${esc(k.exp)}</div>
         ${e ? `<button class="clr" data-clr="${k.key}" title="外す">×</button>
-               <div class="file">${esc(e.file.name)}</div>
+               <div class="file">${esc(e.name)}</div>
                <div class="msg">${msg ? esc(msg) : '✓ ' + e.sizes.length + 'ページ'}</div>`
             : `<button class="pick" data-pick="${k.key}">選択</button>`}
       </div>`;
     }).join('');
 
     renderPeriod();
+    renderNavi();
     renderOuts();
   }
 
@@ -334,7 +540,9 @@
     const corp = $('corp').value.trim() || '法人名';
     const month = $('month').value.trim().replace(/月$/, '') || '○';
     const p = ['bs','pl','zenki'].map(k => files[k] && files[k].period).find(Boolean);
-    const wareki = p ? `R${p.year}.${month}` : `R○.${month}`;
+    const nm = NAVI && NAVI.info && String(NAVI.info.period || '').match(/令和0*(\d+)年[^令]*$/);
+    const year = p ? p.year : nm ? +nm[1] : '○';
+    const wareki = `R${year}.${month}`;
     const ok = k => files[k] && !files[k].error;
     const name = k => KINDS.find(x => x.key === k).name;
     const base = ['bs','pl','zenki'].filter(ok);
@@ -394,10 +602,16 @@
   /* ---------- 操作 ---------- */
   const multi = $('multi');
   let pickKey = null;
-  $('drop').addEventListener('click', () => { pickKey = null; multi.multiple = true; multi.click(); });
+  $('drop').addEventListener('click', () => { pickKey = null; multi.multiple = true; multi.accept = 'application/pdf,.xlsx,.xls'; multi.click(); });
+  $('navi').addEventListener('click', e => {
+    if (e.target.id === 'xlsxPick'){ pickKey = 'xlsx'; multi.multiple = false; multi.accept = '.xlsx,.xls'; multi.click(); }
+    if (e.target.id === 'naviThumb') e.target.classList.toggle('big');
+  });
+  $('navi').addEventListener('change', e => { if (e.target.id === 'openCash' || e.target.id === 'openLoan') setOpening(); });
   multi.addEventListener('change', async () => {
     const list = [...multi.files]; multi.value = '';
-    if (pickKey && list[0]) await setFile(pickKey, list[0]); else await addFiles(list);
+    if (pickKey === 'xlsx' && list[0]) await loadExcel(list[0]);
+    else if (pickKey && list[0]) await setFile(pickKey, list[0]); else await addFiles(list);
   });
   ['dragover','dragenter'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
   ['dragleave','drop'].forEach(ev => $('drop').addEventListener(ev, () => $('drop').classList.remove('over')));
@@ -408,8 +622,12 @@
 
   $('slots').addEventListener('click', e => {
     const pick = e.target.dataset.pick, clr = e.target.dataset.clr;
-    if (pick){ pickKey = pick; multi.multiple = false; multi.click(); }
-    if (clr){ delete files[clr]; render(); }
+    if (pick){ pickKey = pick; multi.multiple = false; multi.accept = 'application/pdf'; multi.click(); }
+    if (clr){
+      delete files[clr];
+      if (clr === 'navi' && NAVI && NAVI.entry && !e.target.closest('.slot').dataset.gen) files.navi = NAVI.entry;
+      render();
+    }
   });
   $('corp').addEventListener('input', renderOuts);
   $('month').addEventListener('input', renderOuts);
