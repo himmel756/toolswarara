@@ -4,7 +4,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>訪問資料 作成ツール v2.0</title>
+<title>訪問資料 作成ツール v2.1</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
@@ -165,6 +165,15 @@
   .open .hint{font-size:.74rem;color:var(--ink-soft);margin-top:4px;}
   details.manual{margin-top:14px;font-size:.8rem;color:var(--ink-soft);}
   details.manual summary{cursor:pointer;}
+  details.names .name-flds{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  details.names .fld{min-width:0;}
+  details.names .fld input{font-size:.86rem;}
+  details.names .name-help{margin-top:8px;font-size:.76rem;line-height:1.9;}
+  details.names code{white-space:nowrap;background:var(--accent-soft);color:var(--accent-deep);border-radius:5px;padding:0 5px;font-size:.74rem;}
+  details.names .pick{
+    margin-left:6px;font:inherit;font-size:.74rem;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:2px 9px;cursor:pointer;color:var(--accent-deep);
+  }
   details.manual ol.how{margin-top:6px;font-size:.8rem;}
   #naviFrame{position:fixed;left:-20000px;top:0;height:1600px;border:0;background:#fff;}
 </style>
@@ -173,7 +182,7 @@
 <div class="wrap">
 
   <header class="title">
-    <h1>訪問資料 作成ツール<span class="ver">v2.0</span></h1>
+    <h1>訪問資料 作成ツール<span class="ver">v2.1</span></h1>
     <div class="sub">弥生の試算表PDF（BS・PL・前期比較）と儲けのカーナビを1つにまとめ、<br>印刷時にA3とA4が自動で選ばれるPDFを作ります。</div>
   </header>
   <div class="newtab" id="newtab">保存がうまくいかないときは <a href="https://himmel756.github.io/toolswarara/houmon.html" target="_blank" rel="noopener">新しいタブで開く</a></div>
@@ -213,6 +222,19 @@
   <section class="step">
     <h2><span class="no">4</span>PDFを保存する</h2>
     <div class="outs" id="outs"><div class="empty">PDFを選ぶと、ここに保存ボタンが出ます（そろっていない資料があっても、ある分だけで作れます）。</div></div>
+    <details class="manual names" id="nameSet">
+      <summary>ファイル名の設定</summary>
+      <div class="name-flds">
+        <div class="fld"><label for="fnPrint">印刷用（全部まとめたもの）</label><input id="fnPrint" type="text"></div>
+        <div class="fld"><label for="fnShisan">月次試算表</label><input id="fnShisan" type="text"></div>
+        <div class="fld"><label for="fnNavi">カーナビ単体</label><input id="fnNavi" type="text"></div>
+      </div>
+      <div class="name-help">
+        使える記号：<code>{法人名}</code> <code>{月}</code>（例 8）<code>{月2}</code>（例 08）<code>{年}</code>（令和の年 例 7）<code>{西暦}</code>（例 2025）<br>
+        「.pdf」は自動で付きます。設定はこのブラウザに保存され、次回も使われます。
+        <button class="pick" id="fnReset" type="button">はじめの設定に戻す</button>
+      </div>
+    </details>
     <div class="note">
       <b>印刷のしかた</b>
       <ul>
@@ -536,13 +558,39 @@
     if (!$('month').value.trim()) $('month').value = ps[0].p.month;
   }
 
+  /* ---------- ファイル名（設定で変えられる） ---------- */
+  const NAME_DEFAULTS = {
+    fnPrint:  '{法人名}{月}月 訪問資料（印刷用）',
+    fnShisan: '{法人名}{月}月まで資料',
+    fnNavi:   '儲けのカーナビ_{法人名}_R{年}.{月}',
+  };
+  const NAME_KEY = 'houmon-filenames';
+  function loadNames(){
+    let saved = {};
+    try{ saved = JSON.parse(localStorage.getItem(NAME_KEY) || '{}') || {}; }catch(e){}
+    for (const id in NAME_DEFAULTS) $(id).value = saved[id] || NAME_DEFAULTS[id];
+  }
+  function saveNames(){
+    const o = {};
+    for (const id in NAME_DEFAULTS) if ($(id).value.trim() && $(id).value.trim() !== NAME_DEFAULTS[id]) o[id] = $(id).value.trim();
+    try{ localStorage.setItem(NAME_KEY, JSON.stringify(o)); }catch(e){}
+  }
+  function fileName(id, v){
+    const tpl = $(id).value.trim() || NAME_DEFAULTS[id];
+    const name = tpl.replace(/\{(法人名|月2|月|年|西暦)\}/g, (_, k) => v[k])
+      .replace(/[\\/:*?"<>|]/g, '_').replace(/\.pdf$/i, '').trim();
+    return (name || 'visit') + '.pdf';
+  }
+
   function outputs(){
     const corp = $('corp').value.trim() || '法人名';
     const month = $('month').value.trim().replace(/月$/, '') || '○';
     const p = ['bs','pl','zenki'].map(k => files[k] && files[k].period).find(Boolean);
     const nm = NAVI && NAVI.info && String(NAVI.info.period || '').match(/令和0*(\d+)年[^令]*$/);
     const year = p ? p.year : nm ? +nm[1] : '○';
-    const wareki = `R${year}.${month}`;
+    // 年は試算表の「至」の日付（＝対象月）の年。西暦は令和から換算
+    const v = { '法人名':corp, '月':month, '月2':/^\d$/.test(month) ? '0' + month : month, '年':year,
+                '西暦': typeof year === 'number' ? String(2018 + year) : '○' };
     const ok = k => files[k] && !files[k].error;
     const name = k => KINDS.find(x => x.key === k).name;
     const base = ['bs','pl','zenki'].filter(ok);
@@ -550,9 +598,9 @@
     // 足りない資料があっても、ある分だけで作る
     const lack = keys => { const miss = keys.filter(k => !ok(k)); return miss.length ? `（${miss.map(name).join('・')}なし）` : ''; };
     const list = [];
-    if (all.length >= 2) list.push({ fn:`${corp}${month}月 訪問資料（印刷用）.pdf`, keys:all, desc:'印刷はこれ1つで済みます' + lack(['bs','pl','zenki','navi']) });
-    if (base.length) list.push({ fn:`${corp}${month}月まで資料.pdf`, keys:base, desc:'月次試算表（' + base.map(name).join(' → ') + '）' + lack(['bs','pl','zenki']) });
-    if (ok('navi')) list.push({ fn:`儲けのカーナビ_${corp}_${wareki}.pdf`, keys:['navi'], desc:'カーナビ単体（印刷設定を入れたもの）' });
+    if (all.length >= 2) list.push({ fn:fileName('fnPrint', v), keys:all, desc:'印刷はこれ1つで済みます' + lack(['bs','pl','zenki','navi']) });
+    if (base.length) list.push({ fn:fileName('fnShisan', v), keys:base, desc:'月次試算表（' + base.map(name).join(' → ') + '）' + lack(['bs','pl','zenki']) });
+    if (ok('navi')) list.push({ fn:fileName('fnNavi', v), keys:['navi'], desc:'カーナビ単体（印刷設定を入れたもの）' });
     return list;
   }
 
@@ -628,6 +676,12 @@
       if (clr === 'navi' && NAVI && NAVI.entry && !e.target.closest('.slot').dataset.gen) files.navi = NAVI.entry;
       render();
     }
+  });
+  loadNames();
+  $('nameSet').addEventListener('input', () => { saveNames(); renderOuts(); });
+  $('fnReset').addEventListener('click', () => {
+    for (const id in NAME_DEFAULTS) $(id).value = NAME_DEFAULTS[id];
+    saveNames(); renderOuts();
   });
   $('corp').addEventListener('input', renderOuts);
   $('month').addEventListener('input', renderOuts);
