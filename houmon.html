@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>訪問資料 作成ツール v1.0</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+  :root{
+    --bg:#fbf7ef;
+    --panel:#ffffff;
+    --ink:#3d4a3e;
+    --ink-soft:#6f7d6e;
+    --line:#e7e0d2;
+    --accent:#5aa897;
+    --accent-deep:#3f8576;
+    --accent-soft:#e3f1ec;
+    --amber:#f0a868;
+    --amber-soft:#fbe7d4;
+    --sky:#8cc6e0;
+    --sky-soft:#e2f1f7;
+    --shadow:0 4px 18px rgba(90,168,151,.10);
+    --radius:16px;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Zen Kaku Gothic New',sans-serif;
+    background:
+      radial-gradient(circle at 12% 8%, #fdeede 0, transparent 38%),
+      radial-gradient(circle at 88% 92%, #e3f1ec 0, transparent 40%),
+      var(--bg);
+    color:var(--ink);
+    padding:28px 16px 48px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:820px;margin:0 auto;}
+
+  header.title{text-align:center;margin-bottom:22px;}
+  header.title h1{
+    font-family:'Zen Maru Gothic',sans-serif;
+    font-weight:700;font-size:1.75rem;
+    margin:0 0 6px;letter-spacing:.04em;
+    color:var(--accent-deep);
+  }
+  header.title .sub{color:var(--ink-soft);font-size:.9rem;line-height:1.7;}
+  .ver{display:inline-block;margin-left:8px;padding:1px 9px;border-radius:999px;background:#e3f1ec;color:#3f8576;font-size:12px;font-weight:600;letter-spacing:.02em;vertical-align:middle;font-family:"Zen Kaku Gothic New",sans-serif}
+
+  .newtab{display:none;text-align:center;font-size:.8rem;margin:-10px 0 16px;}
+  .newtab a{color:var(--accent-deep);}
+
+  .step{
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:18px 20px;margin-bottom:16px;
+  }
+  .step h2{
+    font-family:'Zen Maru Gothic',sans-serif;
+    font-size:1.05rem;margin:0 0 4px;color:var(--accent-deep);
+    display:flex;align-items:center;gap:9px;
+  }
+  .step h2 .no{
+    width:24px;height:24px;border-radius:50%;flex:none;
+    background:var(--accent-soft);color:var(--accent-deep);
+    display:inline-flex;align-items:center;justify-content:center;font-size:.85rem;
+  }
+  .step .lead{margin:0 0 12px;font-size:.84rem;color:var(--ink-soft);line-height:1.75;}
+
+  .drop{
+    border:2px dashed #cfe3dc;border-radius:12px;background:#fbfefd;
+    padding:18px;text-align:center;font-size:.88rem;color:var(--ink-soft);
+    cursor:pointer;transition:.15s;
+  }
+  .drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-soft);}
+  .drop b{color:var(--accent-deep);}
+
+  .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px;}
+  .slot{
+    border:1px solid var(--line);border-radius:11px;padding:10px 12px;
+    background:#fffdf9;font-size:.8rem;line-height:1.6;position:relative;
+  }
+  .slot.ok{border-color:#bfe0d5;background:#f6fbf9;}
+  .slot.warn{border-color:#f3cfa9;background:#fff8f0;}
+  .slot .nm{font-weight:700;font-size:.88rem;color:var(--ink);}
+  .slot .exp{color:var(--ink-soft);font-size:.74rem;}
+  .slot .file{word-break:break-all;margin-top:4px;}
+  .slot .msg{margin-top:3px;font-size:.74rem;}
+  .slot.warn .msg{color:#b06a2c;}
+  .slot .pick{
+    margin-top:6px;font:inherit;font-size:.74rem;border:1px solid var(--line);
+    background:#fff;border-radius:8px;padding:3px 9px;cursor:pointer;color:var(--accent-deep);
+  }
+  .slot .clr{
+    position:absolute;top:6px;right:8px;border:none;background:none;cursor:pointer;
+    color:var(--ink-soft);font-size:.95rem;
+  }
+
+  .row{display:flex;gap:12px;flex-wrap:wrap;}
+  .fld{flex:1;min-width:180px;}
+  .fld label{display:block;font-size:.78rem;font-weight:700;color:var(--ink-soft);margin-bottom:4px;}
+  .fld input{
+    width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;
+    font:inherit;font-size:.92rem;color:var(--ink);background:#fff;
+  }
+  .fld input:focus{outline:2px solid var(--accent-soft);border-color:var(--accent);}
+  .period{font-size:.8rem;color:var(--ink-soft);margin-top:8px;line-height:1.7;}
+  .period.warn{color:#b06a2c;}
+
+  ol.how{margin:0;padding-left:1.3em;font-size:.84rem;line-height:1.9;}
+  ol.how a{color:var(--accent-deep);font-weight:700;}
+
+  .outs{display:flex;flex-direction:column;gap:10px;}
+  .out{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:#fffdf9;
+  }
+  .out .info{flex:1;min-width:220px;}
+  .out .fn{font-weight:700;font-size:.88rem;word-break:break-all;}
+  .out .pages{margin-top:5px;display:flex;flex-wrap:wrap;gap:4px;}
+  .chip{font-size:.7rem;padding:1px 7px;border-radius:999px;background:var(--sky-soft);color:#3b7690;}
+  .chip.a4{background:var(--amber-soft);color:#b06a2c;}
+  .out .desc{font-size:.76rem;color:var(--ink-soft);margin-top:2px;}
+  button.dl{
+    font:inherit;font-weight:700;font-size:.85rem;border:none;cursor:pointer;
+    background:var(--accent);color:#fff;border-radius:10px;padding:8px 16px;
+  }
+  button.dl:hover{background:var(--accent-deep);}
+  button.dl:disabled{background:#c9d6d1;cursor:default;}
+  .empty{font-size:.84rem;color:var(--ink-soft);}
+
+  .note{
+    font-size:.78rem;color:var(--ink-soft);line-height:1.75;
+    background:#fffdf9;border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-top:8px;
+  }
+  .note b{color:var(--ink);}
+  .note ul{margin:4px 0 0;padding-left:1.2em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="title">
+    <h1>訪問資料 作成ツール<span class="ver">v1.0</span></h1>
+    <div class="sub">弥生の試算表PDF（BS・PL・前期比較）と儲けのカーナビを1つにまとめ、<br>印刷時にA3とA4が自動で選ばれるPDFを作ります。</div>
+  </header>
+  <div class="newtab" id="newtab">保存がうまくいかないときは <a href="https://himmel756.github.io/toolswarara/houmon.html" target="_blank" rel="noopener">新しいタブで開く</a></div>
+
+  <section class="step">
+    <h2><span class="no">1</span>試算表のPDFを選ぶ</h2>
+    <p class="lead">弥生から書き出した <b>○○BS.pdf</b>・<b>○○PL.pdf</b>・<b>○○前期比較.pdf</b> をまとめてドロップしてください（ファイル名で自動で振り分けます）。</p>
+    <div class="drop" id="drop">ここにPDFをドロップ、または <b>クリックして選択</b></div>
+    <input type="file" id="multi" accept="application/pdf" multiple hidden>
+    <div class="slots" id="slots"></div>
+  </section>
+
+  <section class="step">
+    <h2><span class="no">2</span>儲けのカーナビをPDFにする（任意）</h2>
+    <ol class="how">
+      <li><a href="https://sites.google.com/view/toolswarara/mokenavi" target="_blank" rel="noopener">儲けのカーナビ</a> を開き、<b>○○報告BSPL.xlsx</b> を読み込む</li>
+      <li>期首残高（現預金・借入金）が空欄なら、BSの「前期繰越」の値を入れる</li>
+      <li>印刷の向きを <b>縦</b> にして「印刷」→ 送信先を <b>「PDFに保存」</b></li>
+      <li>保存したPDFを上の枠（またはカーナビ欄の「選択」）へ</li>
+    </ol>
+  </section>
+
+  <section class="step">
+    <h2><span class="no">3</span>法人名と対象月</h2>
+    <div class="row">
+      <div class="fld"><label for="corp">法人名（ファイル名に使います）</label><input id="corp" type="text" placeholder="例：サンプル商事"></div>
+      <div class="fld" style="max-width:160px"><label for="month">何月まで</label><input id="month" type="text" inputmode="numeric" placeholder="例：8"></div>
+    </div>
+    <div class="period" id="period"></div>
+  </section>
+
+  <section class="step">
+    <h2><span class="no">4</span>PDFを保存する</h2>
+    <div class="outs" id="outs"><div class="empty">BS・PL・前期比較のPDFを選ぶと、ここに保存ボタンが出ます。</div></div>
+    <div class="note">
+      <b>印刷のしかた</b>
+      <ul>
+        <li><b>Adobe Acrobat Reader</b> で開いて印刷してください（Edge・Chromeで印刷すると全ページが同じ用紙になります）。</li>
+        <li>印刷画面の「PDFのページサイズに合わせて用紙を選択」にチェック（最初から入っているはずです）、「ページサイズ処理」は「実際のサイズ」、「縦/横」は「自動」。</li>
+        <li>プリンターの給紙は「自動」に（A3とA4のトレイが必要です）。</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="note">
+    PDFの結合はこのブラウザの中だけで行います（ファイルはどこにも送信されません）。
+    このページを閉じると選んだファイルは消えます。
+  </div>
+
+</div>
+
+<script>
+  const { PDFDocument, PrintScaling } = PDFLib;
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  if (window.top !== window) document.getElementById('newtab').style.display = 'block';
+
+  /* 資料の種類 — 並び順がそのまま結合順になる */
+  const KINDS = [
+    { key:'bs',   name:'BS',           match:/BS/i,       exp:'A3横・1ページ', size:'A3', pages:1 },
+    { key:'pl',   name:'PL',           match:/PL/i,       exp:'A3横・2ページ', size:'A3', pages:2 },
+    { key:'zenki',name:'前期比較',     match:/前期比較/,  exp:'A4縦・4ページ', size:'A4', pages:4 },
+    { key:'navi', name:'儲けのカーナビ', match:/カーナビ|mokenavi/i, exp:'A3縦・1ページ（任意）', size:'A3', pages:1 },
+  ];
+  const files = {};   // key -> { file, bytes, sizes:[], period }
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  /* ---------- ファイルの振り分け ---------- */
+  function kindOf(name){
+    const base = name.replace(/\.pdf$/i, '');
+    if (/カーナビ|mokenavi/i.test(base)) return 'navi';
+    if (/前期比較/.test(base)) return 'zenki';
+    if (/BS$/i.test(base)) return 'bs';
+    if (/PL$/i.test(base)) return 'pl';
+    if (/BS/i.test(base)) return 'bs';
+    if (/PL/i.test(base)) return 'pl';
+    return null;
+  }
+
+  async function addFiles(list){
+    const unknown = [];
+    for (const f of list){
+      if (!/\.pdf$/i.test(f.name)) continue;
+      const k = kindOf(f.name);
+      if (!k){ unknown.push(f.name); continue; }
+      await setFile(k, f);
+    }
+    if (unknown.length) alert('種類が分からなかったファイルがあります（各欄の「選択」から入れてください）:\n' + unknown.join('\n'));
+  }
+
+  async function setFile(key, f){
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    const entry = { file:f, bytes, sizes:[], period:null, error:null };
+    try{
+      const doc = await PDFDocument.load(bytes, { ignoreEncryption:true });
+      entry.sizes = doc.getPages().map(pageSize);
+    }catch(e){ entry.error = 'PDFを読み込めませんでした'; }
+    if (!entry.error && key !== 'navi') entry.period = await readPeriod(bytes);
+    files[key] = entry;
+    guessCorp();
+    render();
+  }
+
+  /* ページの用紙（A3/A4）と、回転を考えた見た目の向き */
+  function pageSize(p){
+    const { width, height } = p.getSize();
+    const rot = ((p.getRotation().angle % 360) + 360) % 360;
+    const long = Math.max(width, height), short = Math.min(width, height);
+    const paper = Math.abs(long - 1191) < 25 && Math.abs(short - 842) < 25 ? 'A3'
+                : Math.abs(long - 842) < 25 && Math.abs(short - 595) < 25 ? 'A4' : 'その他';
+    const tall = (rot === 90 || rot === 270) ? width > height : height > width;
+    return { paper, dir: tall ? '縦' : '横' };
+  }
+
+  /* 1ページ目から「自 令和○年○月○日 至 令和○年○月○日」を読む */
+  async function readPeriod(bytes){
+    if (!window.pdfjsLib) return null;
+    try{
+      const pdf = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
+      const page = await pdf.getPage(1);
+      const tc = await page.getTextContent();
+      const text = tc.items.map(i => i.str).join('')
+        .replace(/\s/g, '')
+        .replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+        .replace(/令和元年/g, '令和1年');
+      const m = text.match(/自令和(\d+)年(\d+)月(\d+)日至令和(\d+)年(\d+)月(\d+)日/);
+      if (!m) return null;
+      return { from:`R${m[1]}.${m[2]}.${m[3]}`, to:`R${m[4]}.${m[5]}.${m[6]}`, year:+m[4], month:+m[5] };
+    }catch(e){ return null; }
+  }
+
+  function guessCorp(){
+    if ($('corp').value.trim()) return;
+    for (const k of ['bs','pl','zenki']){
+      const e = files[k]; if (!e) continue;
+      const base = e.file.name.replace(/\.pdf$/i, '');
+      const name = k === 'zenki' ? base.replace(/前期比較.*$/, '') : base.replace(/(BS|PL)$/i, '');
+      if (name && name !== base){ $('corp').value = name.trim(); return; }
+    }
+  }
+
+  /* ---------- 表示 ---------- */
+  function checkMsg(k, e){
+    if (e.error) return e.error;
+    const kind = KINDS.find(x => x.key === k);
+    const probs = [];
+    if (e.sizes.length !== kind.pages) probs.push(`${e.sizes.length}ページです（通常は${kind.pages}ページ）`);
+    if (e.sizes.some(s => s.paper !== kind.size)) probs.push(`${kind.size}ではないページがあります`);
+    return probs.join('／');
+  }
+
+  function render(){
+    $('slots').innerHTML = KINDS.map(k => {
+      const e = files[k.key];
+      const msg = e ? checkMsg(k.key, e) : '';
+      const cls = e ? (msg ? 'warn' : 'ok') : '';
+      return `<div class="slot ${cls}">
+        <div class="nm">${esc(k.name)}</div>
+        <div class="exp">${esc(k.exp)}</div>
+        ${e ? `<button class="clr" data-clr="${k.key}" title="外す">×</button>
+               <div class="file">${esc(e.file.name)}</div>
+               <div class="msg">${msg ? esc(msg) : '✓ ' + e.sizes.length + 'ページ'}</div>`
+            : `<button class="pick" data-pick="${k.key}">選択</button>`}
+      </div>`;
+    }).join('');
+
+    renderPeriod();
+    renderOuts();
+  }
+
+  function renderPeriod(){
+    const ps = ['bs','pl','zenki'].filter(k => files[k] && files[k].period).map(k => ({ k, p: files[k].period }));
+    const el = $('period');
+    if (!ps.length){ el.textContent = ''; el.className = 'period'; return; }
+    const same = ps.every(x => x.p.from === ps[0].p.from && x.p.to === ps[0].p.to);
+    const label = k => KINDS.find(x => x.key === k).name;
+    el.className = 'period' + (same ? '' : ' warn');
+    el.innerHTML = same
+      ? `PDFの期間：${esc(ps[0].p.from)} 〜 ${esc(ps[0].p.to)}（${ps.map(x => label(x.k)).join('・')} で一致）`
+      : '⚠ PDFの期間がそろっていません：' + ps.map(x => `${label(x.k)} ${esc(x.p.from)}〜${esc(x.p.to)}`).join('／');
+    if (!$('month').value.trim()) $('month').value = ps[0].p.month;
+  }
+
+  function outputs(){
+    const corp = $('corp').value.trim() || '法人名';
+    const month = $('month').value.trim().replace(/月$/, '') || '○';
+    const p = ['bs','pl','zenki'].map(k => files[k] && files[k].period).find(Boolean);
+    const wareki = p ? `R${p.year}.${month}` : `R○.${month}`;
+    const hasBase = ['bs','pl','zenki'].every(k => files[k] && !files[k].error);
+    const hasNavi = files.navi && !files.navi.error;
+    const list = [];
+    if (hasBase && hasNavi) list.push({ fn:`${corp}${month}月 訪問資料（印刷用）.pdf`, keys:['bs','pl','zenki','navi'], desc:'印刷はこれ1つで済みます' });
+    if (hasBase) list.push({ fn:`${corp}${month}月まで資料.pdf`, keys:['bs','pl','zenki'], desc:'月次試算表（BS → PL → 前期比較）' });
+    if (hasNavi) list.push({ fn:`儲けのカーナビ_${corp}_${wareki}.pdf`, keys:['navi'], desc:'カーナビ単体（印刷設定を入れたもの）' });
+    return list;
+  }
+
+  function renderOuts(){
+    const list = outputs();
+    if (!list.length){
+      $('outs').innerHTML = `<div class="empty">BS・PL・前期比較のPDFを選ぶと、ここに保存ボタンが出ます。</div>`;
+      return;
+    }
+    $('outs').innerHTML = list.map((o, i) => {
+      const chips = o.keys.flatMap(k => files[k].sizes)
+        .map(s => `<span class="chip ${s.paper === 'A4' ? 'a4' : ''}">${esc(s.paper + s.dir)}</span>`).join('');
+      return `<div class="out">
+        <div class="info">
+          <div class="fn">${esc(o.fn)}</div>
+          <div class="desc">${esc(o.desc)}</div>
+          <div class="pages">${chips}</div>
+        </div>
+        <button class="dl" data-out="${i}">保存</button>
+      </div>`;
+    }).join('');
+  }
+
+  /* ---------- 結合と保存 ---------- */
+  async function build(keys){
+    const out = await PDFDocument.create();
+    for (const k of keys){
+      const src = await PDFDocument.load(files[k].bytes, { ignoreEncryption:true });
+      const pages = await out.copyPages(src, src.getPageIndices());
+      pages.forEach(p => out.addPage(p));
+    }
+    // 印刷時にページごとの用紙サイズで給紙し、拡大縮小しない
+    const vp = out.catalog.getOrCreateViewerPreferences();
+    vp.setPickTrayByPDFSize(true);
+    vp.setPrintScaling(PrintScaling.None);
+    return out.save();
+  }
+
+  function download(bytes, fn){
+    const url = URL.createObjectURL(new Blob([bytes], { type:'application/pdf' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = fn;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+  }
+
+  /* ---------- 操作 ---------- */
+  const multi = $('multi');
+  let pickKey = null;
+  $('drop').addEventListener('click', () => { pickKey = null; multi.multiple = true; multi.click(); });
+  multi.addEventListener('change', async () => {
+    const list = [...multi.files]; multi.value = '';
+    if (pickKey && list[0]) await setFile(pickKey, list[0]); else await addFiles(list);
+  });
+  ['dragover','dragenter'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev => $('drop').addEventListener(ev, () => $('drop').classList.remove('over')));
+  $('drop').addEventListener('drop', e => { e.preventDefault(); addFiles([...e.dataTransfer.files]); });
+  // ページのどこにドロップしてもブラウザでPDFが開かないようにする
+  window.addEventListener('dragover', e => e.preventDefault());
+  window.addEventListener('drop', e => { e.preventDefault(); if (!$('drop').contains(e.target)) addFiles([...e.dataTransfer.files]); });
+
+  $('slots').addEventListener('click', e => {
+    const pick = e.target.dataset.pick, clr = e.target.dataset.clr;
+    if (pick){ pickKey = pick; multi.multiple = false; multi.click(); }
+    if (clr){ delete files[clr]; render(); }
+  });
+  $('corp').addEventListener('input', renderOuts);
+  $('month').addEventListener('input', renderOuts);
+
+  $('outs').addEventListener('click', async e => {
+    const i = e.target.dataset.out; if (i == null) return;
+    const o = outputs()[+i], btn = e.target;
+    btn.disabled = true; btn.textContent = '作成中…';
+    try{ download(await build(o.keys), o.fn); }
+    catch(err){ console.error(err); alert('PDFの作成に失敗しました：' + err.message); }
+    btn.disabled = false; btn.textContent = '保存';
+  });
+
+  render();
+</script>
+</body>
+</html>
