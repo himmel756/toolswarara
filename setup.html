@@ -4,7 +4,7 @@
 <meta name="robots" content="noindex, nofollow">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Cowork と Claude Code の初期設定（Windows） v1.0</title>
+<title>Cowork と Claude Code の初期設定（Windows） v1.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
@@ -92,6 +92,24 @@ th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line); v
 th{background:var(--blue-soft); font-weight:700}
 tr:last-child td{border-bottom:0}
 
+.dl{
+  display:flex; gap:16px; align-items:center; flex-wrap:wrap;
+  background:var(--paper); border:1px solid var(--line); border-left:5px solid var(--blue);
+  border-radius:12px; padding:16px 18px; margin-top:28px;
+}
+.dl > div{flex:1 1 320px}
+.dl h2{font-size:1.1rem; margin:0 0 4px}
+.dl p{margin:0 0 4px}
+.dl p.small{color:var(--sub); font-size:.88rem; margin:0}
+.dl-btn{
+  flex:none; display:inline-block; text-decoration:none;
+  background:var(--blue); color:#fff; font-weight:700;
+  padding:10px 22px; border-radius:999px;
+}
+.dl-btn:hover{background:#346f62}
+.dl-btn:focus-visible{outline:3px solid var(--blue); outline-offset:2px}
+a.inline{color:var(--blue)}
+
 footer{margin-top:48px; color:var(--sub); font-size:.85rem}
 footer a{color:var(--blue)}
 </style>
@@ -100,7 +118,7 @@ footer a{color:var(--blue)}
 <div class="wrap">
 
 <header>
-  <h1>Cowork と Claude Code の初期設定（Windows）<span class="ver">v1.0</span></h1>
+  <h1>Cowork と Claude Code の初期設定（Windows）<span class="ver">v1.1</span></h1>
   <p>新しいPCで使い始めるときの手順メモです。コマンドは右の「コピー」でそのまま貼り付けられます。</p>
   <nav class="jump" aria-label="ページ内リンク">
     <a href="#check">はじめに確認</a>
@@ -109,6 +127,15 @@ footer a{color:var(--blue)}
     <a href="#ps">困ったとき</a>
   </nav>
 </header>
+
+<section id="bat" class="dl">
+  <div>
+    <h2>準備用バッチ（claude_app_setup.bat）</h2>
+    <p>ダブルクリックするだけで「仮想マシン プラットフォーム」の確認・有効化と、Git のインストールをまとめて行います。途中で管理者の許可を求められたら「はい」を選んでください。</p>
+    <p class="small">「WindowsによってPCが保護されました」と出た場合は「詳細情報」→「実行」で進めます。</p>
+  </div>
+  <a class="dl-btn" href="claude_app_setup.bat" download="claude_app_setup.bat">ダウンロード</a>
+</section>
 
 <section id="check">
   <h2>はじめに確認すること</h2>
@@ -137,7 +164,7 @@ footer a{color:var(--blue)}
     </li>
     <li>
       <h3>仮想マシン プラットフォームを有効にする</h3>
-      <p>Coworkを選んだときに「追加のセットアップが必要」や「HCSサービスがない」といった表示が出たら、この機能が無効です。準備用バッチ（claude_app_setup.bat）を実行するか、下の「PowerShell便利コマンド」で有効にして再起動します。</p>
+      <p>Coworkを選んだときに「追加のセットアップが必要」や「HCSサービスがない」といった表示が出たら、この機能が無効です。<a class="inline" href="#bat">準備用バッチ（claude_app_setup.bat）</a>を実行するか、下の「PowerShell便利コマンド」で有効にして再起動します。</p>
     </li>
     <li>
       <h3>有料プランのアカウントでログイン</h3>
@@ -165,7 +192,7 @@ footer a{color:var(--blue)}
   <ol class="steps">
     <li>
       <h3>Git for Windows を入れる</h3>
-      <p>WindowsでPC上のフォルダを使うにはGitが必要です。準備用バッチで自動で入ります。手動の場合はPowerShellで次を実行します。</p>
+      <p>WindowsでPC上のフォルダを使うにはGitが必要です。<a class="inline" href="#bat">準備用バッチ</a>で自動で入ります。手動の場合はPowerShellで次を実行します。</p>
       <div class="cmd"><code>winget install --id Git.Git -e</code><button type="button">コピー</button></div>
     </li>
     <li>
