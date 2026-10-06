@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="robots" content="noindex, nofollow">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cowork と Claude Code の初期設定（Windows） v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* 共通パレット（CLAUDE.md §5）に合わせた配色 */
+:root{
+  --bg:#fbf7ef; --paper:#ffffff; --ink:#3d4a3e; --sub:#6f7d6e;
+  --line:#e7e0d2; --blue:#3f8576; --blue-soft:#e3f1ec;
+  --mint:#e2f1f7; --mint-ink:#3d7f9c; --sun:#fbe7d4; --sun-ink:#b06a2c;
+  --code-bg:#f7f3ea; --code-ink:#3d4a3e;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+h1,h2,h3{font-family:"Zen Maru Gothic","Zen Kaku Gothic New",sans-serif}
+.ver{display:inline-block;margin-left:8px;padding:1px 9px;border-radius:999px;background:#e3f1ec;color:#3f8576;font-size:12px;font-weight:600;letter-spacing:.02em;vertical-align:middle;font-family:"Zen Kaku Gothic New",sans-serif}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",sans-serif;
+  font-size:16px; line-height:1.8;
+}
+.wrap{max-width:760px; margin:0 auto; padding:40px 20px 64px}
+header h1{font-size:1.75rem; line-height:1.4; margin:0 0 8px; font-weight:700}
+header p{margin:0; color:var(--sub)}
+.jump{display:flex; gap:10px; flex-wrap:wrap; margin:22px 0 8px}
+.jump a{
+  text-decoration:none; color:var(--blue); background:var(--blue-soft);
+  padding:6px 14px; border-radius:999px; font-weight:500; font-size:.95rem;
+}
+.jump a:focus-visible,button:focus-visible{outline:3px solid var(--blue); outline-offset:2px}
+
+section{margin-top:40px}
+section > h2{
+  font-size:1.35rem; margin:0 0 4px; padding-left:12px;
+  border-left:5px solid var(--blue); line-height:1.4;
+}
+section.code-sec > h2{border-left-color:var(--mint-ink)}
+section.ps-sec > h2{border-left-color:var(--sun-ink)}
+.lead{color:var(--sub); margin:6px 0 18px}
+
+ol.steps{list-style:none; counter-reset:s; padding:0; margin:0}
+ol.steps > li{
+  counter-increment:s; position:relative;
+  background:var(--paper); border:1px solid var(--line); border-radius:12px;
+  padding:16px 18px 16px 58px; margin-bottom:12px;
+}
+ol.steps > li::before{
+  content:counter(s); position:absolute; left:16px; top:15px;
+  width:28px; height:28px; border-radius:50%;
+  background:var(--blue-soft); color:var(--blue);
+  font-weight:700; text-align:center; line-height:28px; font-size:.95rem;
+}
+.code-sec ol.steps > li::before{background:var(--mint); color:var(--mint-ink)}
+ol.steps h3{font-size:1.05rem; margin:0 0 4px}
+ol.steps p{margin:0 0 6px}
+ol.steps p:last-child{margin-bottom:0}
+
+.cmd{
+  display:flex; align-items:stretch; margin:10px 0 4px;
+  background:var(--code-bg); border:1px solid var(--line); border-radius:8px; overflow:hidden;
+}
+.cmd code{
+  flex:1; padding:10px 12px; overflow-x:auto; white-space:pre;
+  font-family:"Cascadia Mono","Consolas","Menlo",monospace; font-size:.88rem; color:var(--code-ink);
+}
+.cmd button{
+  flex:none; border:0; border-left:1px solid var(--line);
+  background:var(--paper); color:var(--blue); font:inherit; font-size:.85rem; font-weight:700;
+  padding:0 14px; cursor:pointer; min-width:76px;
+}
+.cmd button:hover{background:var(--blue-soft)}
+.cmd button.done{color:var(--mint-ink); background:var(--mint)}
+
+.note{
+  background:var(--sun); color:var(--ink); border-radius:10px;
+  padding:12px 16px; margin:14px 0 0; font-size:.95rem;
+}
+.note strong{color:var(--sun-ink)}
+
+table{width:100%; border-collapse:collapse; background:var(--paper); border-radius:12px; overflow:hidden; border:1px solid var(--line)}
+.tbl{overflow-x:auto}
+th,td{padding:10px 14px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top; font-size:.95rem}
+th{background:var(--blue-soft); font-weight:700}
+tr:last-child td{border-bottom:0}
+
+footer{margin-top:48px; color:var(--sub); font-size:.85rem}
+footer a{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Cowork と Claude Code の初期設定（Windows）<span class="ver">v1.0</span></h1>
+  <p>新しいPCで使い始めるときの手順メモです。コマンドは右の「コピー」でそのまま貼り付けられます。</p>
+  <nav class="jump" aria-label="ページ内リンク">
+    <a href="#check">はじめに確認</a>
+    <a href="#cowork">Cowork</a>
+    <a href="#code">Claude Code</a>
+    <a href="#ps">困ったとき</a>
+  </nav>
+</header>
+
+<section id="check">
+  <h2>はじめに確認すること</h2>
+  <p class="lead">Coworkが選べない・起動しないときは、まずここを確認します。</p>
+  <div class="tbl">
+  <table>
+    <tr><th>項目</th><th>必要な条件</th></tr>
+    <tr><td>プラン</td><td>有料プラン（Pro / Max / Team / Enterprise）のアカウントでログインしていること</td></tr>
+    <tr><td>インストール方法</td><td>claude.com/download から入れた最新版（.msix版）であること。古い.exe版ではCoworkが使えません</td></tr>
+    <tr><td>管理者権限</td><td>インストール時に管理者権限があること。権限なしで入れた場合、デスクトップのCoworkは使えません</td></tr>
+    <tr><td>仮想マシン プラットフォーム</td><td>Windowsの機能「仮想マシン プラットフォーム」が有効であること（有効化後は再起動が必要）</td></tr>
+    <tr><td>その他</td><td>Sモードのパソコンでは使えません</td></tr>
+  </table>
+  </div>
+  <p class="note"><strong>対応チェックツール：</strong>公式ヘルプ（Claude Cowork の使い方）から、PCがCoworkに対応しているか確認する小さなプログラムをダウンロードできます。「This computer is ready for Cowork」と出れば準備OKです。</p>
+</section>
+
+<section id="cowork">
+  <h2>Cowork の初期設定</h2>
+  <p class="lead">デスクトップアプリで使います。Web・スマホ版はベータとして順次提供中です。</p>
+  <ol class="steps">
+    <li>
+      <h3>デスクトップアプリを入れる</h3>
+      <p>公式サイトからWindows版をダウンロードしてインストールします。すでに入っている場合は最新版に更新します。</p>
+      <div class="cmd"><code>https://claude.com/download</code><button type="button">コピー</button></div>
+    </li>
+    <li>
+      <h3>仮想マシン プラットフォームを有効にする</h3>
+      <p>Coworkを選んだときに「追加のセットアップが必要」や「HCSサービスがない」といった表示が出たら、この機能が無効です。準備用バッチ（claude_app_setup.bat）を実行するか、下の「PowerShell便利コマンド」で有効にして再起動します。</p>
+    </li>
+    <li>
+      <h3>有料プランのアカウントでログイン</h3>
+      <p>別のアカウントや無料アカウントだとCoworkが表示されません。</p>
+    </li>
+    <li>
+      <h3>入力欄で「Cowork」に切り替える</h3>
+      <p>メッセージ入力欄のところにある「Chat / Cowork」の切り替えで「Cowork」を選び、やってほしい作業を書きます（アプリのバージョンによって表示位置が少し違います）。見当たらない場合はアプリを更新してください。</p>
+    </li>
+    <li>
+      <h3>作業フォルダを指定する</h3>
+      <p>Claudeが読み書きしてよいフォルダを選びます。最初は作業用の専用フォルダを作っておくと安心です。</p>
+    </li>
+    <li>
+      <h3>共通の指示を設定（任意）</h3>
+      <p>「設定 → Cowork」の「グローバル指示」で、毎回使う指示（口調、出力の形式など）を登録できます。</p>
+    </li>
+  </ol>
+  <p class="note"><strong>ポイント：</strong>デスクトップのCoworkは、作業中アプリを開いたままにしてPCがスリープしないようにしてください。初回起動時は作業環境のダウンロードで少し時間がかかります。</p>
+</section>
+
+<section id="code" class="code-sec">
+  <h2>Claude Code（アプリの Code タブ）の初期設定</h2>
+  <p class="lead">デスクトップアプリにClaude Codeが含まれているので、別途インストールは不要です。Windowsで必要な準備はGitだけです。</p>
+  <ol class="steps">
+    <li>
+      <h3>Git for Windows を入れる</h3>
+      <p>WindowsでPC上のフォルダを使うにはGitが必要です。準備用バッチで自動で入ります。手動の場合はPowerShellで次を実行します。</p>
+      <div class="cmd"><code>winget install --id Git.Git -e</code><button type="button">コピー</button></div>
+    </li>
+    <li>
+      <h3>アプリを再起動する</h3>
+      <p>Gitを入れたあとは、Claudeアプリを一度終了して開き直します。</p>
+    </li>
+    <li>
+      <h3>Code タブを開く</h3>
+      <p>アプリ上部中央の「Code」を選びます。</p>
+    </li>
+    <li>
+      <h3>作業フォルダを選んで依頼する</h3>
+      <p>使うフォルダを選んで、やってほしいことを書きます。最初は確認ありのモードなので、Claudeが提案した変更を見てから適用できます。</p>
+    </li>
+    <li>
+      <h3>細かい設定・更新（任意）</h3>
+      <p>動作の設定は「設定 → Claude Code」、アプリの更新は「ヘルプ → アップデートを確認」から行います。</p>
+    </li>
+  </ol>
+  <p class="note"><strong>Codeタブが使えないとき：</strong>Claude Codeは有料プランが必要です（無料プランでは使えません）。Gitを入れたあと、アプリを再起動したかも確認してください。</p>
+</section>
+
+<section id="ps" class="ps-sec">
+  <h2>PowerShell 便利コマンド</h2>
+  <p class="lead">準備用バッチでまとめて実行できますが、個別に使う場合はこちら。どれも「管理者として実行」したPowerShellで使います。</p>
+  <ol class="steps">
+    <li style="padding-left:18px">
+      <h3>仮想マシン プラットフォームの状態を確認</h3>
+      <p>「State : Enabled」なら有効です。</p>
+      <div class="cmd"><code>Get-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform</code><button type="button">コピー</button></div>
+    </li>
+    <li style="padding-left:18px">
+      <h3>仮想マシン プラットフォームを有効にする</h3>
+      <p>実行後、PCを再起動します。</p>
+      <div class="cmd"><code>Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All</code><button type="button">コピー</button></div>
+    </li>
+    <li style="padding-left:18px">
+      <h3>「VM service not running」と出たとき</h3>
+      <p>Coworkの仮想マシン用サービスを起動します。直らない場合は claude.com/download から入れ直します（Microsoft Store版はサービス名が CoworkVMServiceStore です）。</p>
+      <div class="cmd"><code>sc.exe start CoworkVMService</code><button type="button">コピー</button></div>
+    </li>
+  </ol>
+  <p class="note"><strong>補足：</strong>VMwareやVirtualBoxを使っているPCでは、Windowsの仮想化機能と競合して起動しないことがあります。ストレージの保存先（設定 → システム → ストレージ）がDドライブになっているとエラーになることもあるので、Cドライブにしておくと安心です。</p>
+  <style>.ps-sec ol.steps > li::before{display:none}</style>
+</section>
+
+<footer>
+  参考：<a href="https://support.claude.com/articles/13345190">Claude Cowork ヘルプ</a> ／
+  <a href="https://docs.claude.com/en/docs/claude-code/overview">Claude Code ドキュメント</a><br>
+  手順は2026年10月時点の情報です（<a href="https://support.claude.com/en/articles/15520349">Web・モバイル対応のヘルプ</a>）。画面や手順が変わっている場合は公式ページを確認してください。
+</footer>
+
+</div>
+<script>
+document.querySelectorAll('.cmd button').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    var text = btn.previousElementSibling.textContent;
+    function ok(){
+      btn.textContent = 'コピー済';
+      btn.classList.add('done');
+      setTimeout(function(){ btn.textContent = 'コピー'; btn.classList.remove('done'); }, 1600);
+    }
+    function fallback(){
+      var ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); ok(); } catch(e) {}
+      document.body.removeChild(ta);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(ok, fallback);
+    } else { fallback(); }
+  });
+});
+</script>
+</body>
+</html>
